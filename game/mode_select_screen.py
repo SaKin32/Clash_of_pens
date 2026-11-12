@@ -8,7 +8,6 @@ from common.constants import (
     BG_COLOR,
     TEXT_COLOR,
     HEADING_COLOR,
-    OVERLAY_COLOR,
     FONT_SIZE_HEADING,
     FONT_SIZE_SMALL,
     VERSION,
@@ -17,6 +16,7 @@ from common.constants import (
     MODE_BUTTON_WIDTH,
     BACK_BUTTON_RECT,
 )
+from game import settings
 from game.button import Button
 from game.screen_manager import Screen
 
@@ -28,15 +28,14 @@ class ModeSelectScreen(Screen):
         super().__init__(manager)
         self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
         self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
-        self.music_on = True
 
+        self.music_btn = Button(self._music_label(), self._rect(3), self.on_toggle_music)
         self.buttons = [
             Button("Player vs Computer", self._rect(0), self.on_pvc),
             Button("Player vs Player", self._rect(1), self.on_pvp),
             Button("Online", self._rect(2), self.on_online),
-            Button("Music: On", self._rect(3), self.on_toggle_music),
+            self.music_btn,
         ]
-        self.music_btn = self.buttons[3]
         self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
 
     @staticmethod
@@ -44,6 +43,13 @@ class ModeSelectScreen(Screen):
         x = (SCREEN_WIDTH - MODE_BUTTON_WIDTH) // 2
         y = 260 + index * (BUTTON_HEIGHT + BUTTON_GAP)
         return (x, y, MODE_BUTTON_WIDTH, BUTTON_HEIGHT)
+
+    @staticmethod
+    def _music_label() -> str:
+        return "Music: On" if settings.is_music_on() else "Music: Off"
+
+    def on_enter(self) -> None:
+        self.music_btn.text = self._music_label()
 
     # Mode callbacks (the actual modes are added in later steps)
     def on_pvc(self) -> None:
@@ -56,8 +62,8 @@ class ModeSelectScreen(Screen):
         print("Online selected")
 
     def on_toggle_music(self) -> None:
-        self.music_on = not self.music_on
-        self.music_btn.text = "Music: On" if self.music_on else "Music: Off"
+        settings.set_music_on(not settings.is_music_on())
+        self.music_btn.text = self._music_label()
 
     def on_back(self) -> None:
         self.manager.switch("title")
