@@ -71,13 +71,13 @@ class TitleScreen(Screen):
 
     # Button callbacks (screens for these are added in later parts)
     def on_new_game(self) -> None:
-        print("New Game clicked")
+        self.manager.switch("mode_select")
 
     def on_resume(self) -> None:
         print("Resume clicked")
 
     def on_about(self) -> None:
-        print("About Us clicked")
+        self.manager.switch("about")
 
     def on_toggle_music(self) -> None:
         self.music_on = not self.music_on
