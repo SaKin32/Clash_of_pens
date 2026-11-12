@@ -19,6 +19,7 @@ from common.constants import (
 )
 from common.paths import resource_path
 from game import save
+from game import settings
 from game.button import Button
 from game.screen_manager import Screen
 
@@ -32,7 +33,6 @@ class TitleScreen(Screen):
         super().__init__(manager)
         self.title_font = pygame.font.Font(None, FONT_SIZE_TITLE)
         self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
-        self.music_on = True
         self.has_save = save.has_save()
 
         self.background = self._load_background()
@@ -44,7 +44,9 @@ class TitleScreen(Screen):
             "Resume", self._rect(1), self.on_resume, enabled=self.has_save
         )
         self.about_btn = Button("About Us", self._rect(2), self.on_about)
-        self.music_btn = Button("Music: On", self._rect(3), self.on_toggle_music)
+        self.music_btn = Button(
+            self._music_label(), self._rect(3), self.on_toggle_music
+        )
         self.quit_btn = Button("Quit", self._rect(4), self.on_quit)
         self.buttons = [
             self.new_game_btn,
@@ -70,10 +72,15 @@ class TitleScreen(Screen):
             return None
         return pygame.transform.smoothscale(image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
+    @staticmethod
+    def _music_label() -> str:
+        return "Music: On" if settings.is_music_on() else "Music: Off"
+
     def on_enter(self) -> None:
-        """Re-check the save file whenever this screen becomes active."""
+        """Refresh Resume and Music state whenever this screen becomes active."""
         self.has_save = save.has_save()
         self.resume_btn.enabled = self.has_save
+        self.music_btn.text = self._music_label()
 
     # Button callbacks
     def on_new_game(self) -> None:
@@ -89,8 +96,8 @@ class TitleScreen(Screen):
         self.manager.switch("about")
 
     def on_toggle_music(self) -> None:
-        self.music_on = not self.music_on
-        self.music_btn.text = "Music: On" if self.music_on else "Music: Off"
+        settings.set_music_on(not settings.is_music_on())
+        self.music_btn.text = self._music_label()
 
     def on_quit(self) -> None:
         # Placeholder state. Real match data replaces this once matches exist.
