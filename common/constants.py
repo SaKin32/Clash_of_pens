@@ -30,3 +30,9 @@ OVERLAY_COLOR = (0, 0, 0, 140)  # RGBA, semi-transparent dark layer over backgro
 BUTTON_WIDTH = 320
 BUTTON_HEIGHT = 64
 BUTTON_GAP = 18
+
+# Mode select / About screens
+HEADING_COLOR = (255, 215, 100)
+FONT_SIZE_HEADING = 72
+MODE_BUTTON_WIDTH = 460
+BACK_BUTTON_RECT = (24, SCREEN_HEIGHT - 84, 160, 56)
