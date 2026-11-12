@@ -3,7 +3,7 @@
 
 ##Author Information & Project Credits
 
-1)
+1)Luckman Rafique 
 2)
 3)Md. Taimur Rahman
 4)
