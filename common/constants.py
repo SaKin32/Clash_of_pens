@@ -41,3 +41,6 @@ BACK_BUTTON_RECT = (24, SCREEN_HEIGHT - 84, 160, 56)
 SAVE_DIR_NAME = "ClashOfPens"
 SAVE_FILE_NAME = "save.json"
 SAVE_VERSION = 1
+
+# Settings
+SETTINGS_FILE_NAME = "settings.json"
