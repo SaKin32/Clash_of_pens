@@ -18,6 +18,7 @@ from common.constants import (
     FONT_SIZE_SMALL,
 )
 from common.paths import resource_path
+from game import save
 from game.button import Button
 from game.screen_manager import Screen
 
@@ -32,7 +33,7 @@ class TitleScreen(Screen):
         self.title_font = pygame.font.Font(None, FONT_SIZE_TITLE)
         self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
         self.music_on = True
-        self.has_save = False  # Will be driven by save.py in a later part
+        self.has_save = save.has_save()
 
         self.background = self._load_background()
         self.overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -44,7 +45,7 @@ class TitleScreen(Screen):
         )
         self.about_btn = Button("About Us", self._rect(2), self.on_about)
         self.music_btn = Button("Music: On", self._rect(3), self.on_toggle_music)
-        self.quit_btn = Button("Quit", self._rect(4), self.manager.quit)
+        self.quit_btn = Button("Quit", self._rect(4), self.on_quit)
         self.buttons = [
             self.new_game_btn,
             self.resume_btn,
@@ -69,12 +70,20 @@ class TitleScreen(Screen):
             return None
         return pygame.transform.smoothscale(image, (SCREEN_WIDTH, SCREEN_HEIGHT))
 
-    # Button callbacks (screens for these are added in later parts)
+    def on_enter(self) -> None:
+        """Re-check the save file whenever this screen becomes active."""
+        self.has_save = save.has_save()
+        self.resume_btn.enabled = self.has_save
+
+    # Button callbacks
     def on_new_game(self) -> None:
         self.manager.switch("mode_select")
 
     def on_resume(self) -> None:
-        print("Resume clicked")
+        state = save.load_game()
+        if state is None:
+            return
+        print("Resume:", state)  # Real match loading comes in a later step
 
     def on_about(self) -> None:
         self.manager.switch("about")
@@ -82,6 +91,11 @@ class TitleScreen(Screen):
     def on_toggle_music(self) -> None:
         self.music_on = not self.music_on
         self.music_btn.text = "Music: On" if self.music_on else "Music: Off"
+
+    def on_quit(self) -> None:
+        # Placeholder state. Real match data replaces this once matches exist.
+        save.save_game({"mode": "pvc", "pen": "ball_pen", "score": [0, 0], "round": 1})
+        self.manager.quit()
 
     def handle_event(self, event: pygame.event.Event) -> None:
         for button in self.buttons:
