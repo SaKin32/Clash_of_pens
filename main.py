@@ -7,6 +7,7 @@ import pygame
 from common.constants import (
     GAME_TITLE, VERSION, SCREEN_WIDTH, SCREEN_HEIGHT, FPS, BG_COLOR
 )
+from game import settings
 from game.about_screen import AboutScreen
 from game.mode_select_screen import ModeSelectScreen
 from game.screen_manager import ScreenManager
@@ -15,6 +16,7 @@ from game.title_screen import TitleScreen
 
 def main():
     pygame.init()
+    settings.load()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption(f"{GAME_TITLE} v{VERSION}")
     clock = pygame.time.Clock()
