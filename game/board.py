@@ -44,6 +44,19 @@ class Board:
         step_y = min(SHRINK_STEP, max(0.0, (h - min_h) / 2))
         return [x + step_x, y + step_y, w - 2 * step_x, h - 2 * step_y]
 
+    def start_small(self, size: tuple) -> None:
+        """Begin as a small board centred in the full board area (sudden death).
+
+        The board counts as fully shrunk, so it never shrinks again.
+        """
+        x, y, w, h = BOARD_RECT
+        new_w, new_h = float(min(size[0], w)), float(min(size[1], h))
+        self.rect = [x + (w - new_w) / 2, y + (h - new_h) / 2, new_w, new_h]
+        self.target = None
+        self.start = None
+        self.shrinking = False
+        self.shrink_count = MAX_SHRINKS
+
     # ----- turn hooks -----
 
     def on_turn_completed(self, shots_per_player: int) -> None:
