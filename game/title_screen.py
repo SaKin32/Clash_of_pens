@@ -90,7 +90,8 @@ class TitleScreen(Screen):
         state = save.load_game()
         if state is None:
             return
-        print("Resume:", state)  # Real match loading comes in a later step
+        self.manager.get("match").resume_from_save(state)
+        self.manager.switch("match")
 
     def on_about(self) -> None:
         self.manager.switch("about")
@@ -100,8 +101,8 @@ class TitleScreen(Screen):
         self.music_btn.text = self._music_label()
 
     def on_quit(self) -> None:
-        # Placeholder state. Real match data replaces this once matches exist.
-        save.save_game({"mode": "pvc", "pen": "ball_pen", "score": [0, 0], "round": 1})
+        # A match in progress is saved by the match screen itself (Save & Exit, or closing
+        # the window), so quitting from the title screen leaves the existing save alone.
         self.manager.quit()
 
     def handle_event(self, event: pygame.event.Event) -> None:
