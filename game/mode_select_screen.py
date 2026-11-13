@@ -53,10 +53,10 @@ class ModeSelectScreen(Screen):
 
     # Mode callbacks (the actual modes are added in later steps)
     def on_pvc(self) -> None:
-        print("Player vs Computer selected")
+        self.manager.switch("match")
 
     def on_pvp(self) -> None:
-        print("Player vs Player selected")
+        self.manager.switch("match")
 
     def on_online(self) -> None:
         print("Online selected")

@@ -12,6 +12,7 @@ from game.about_screen import AboutScreen
 from game.mode_select_screen import ModeSelectScreen
 from game.screen_manager import ScreenManager
 from game.title_screen import TitleScreen
+from game.match_screen import MatchScreen
 
 
 def main():
@@ -25,6 +26,7 @@ def main():
     manager.register("title", TitleScreen(manager))
     manager.register("mode_select", ModeSelectScreen(manager))
     manager.register("about", AboutScreen(manager))
+    manager.register("match", MatchScreen(manager))
     manager.switch("title")
 
     while manager.running:
