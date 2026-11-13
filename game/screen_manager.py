@@ -15,6 +15,9 @@ class Screen:
     def handle_event(self, event: pygame.event.Event) -> None:
         """Handle a single pygame event."""
 
+    def on_quit(self) -> None:
+        """Called when the game is closing while this screen is active (save here)."""
+
     def update(self, dt: float) -> None:
         """Update logic. dt is the frame time in seconds."""
 
@@ -33,9 +36,14 @@ class ScreenManager:
     def register(self, name: str, screen: Screen) -> None:
         self._screens[name] = screen
 
+    def get(self, name: str) -> Screen:
+        return self._screens[name]
+
     def switch(self, name: str) -> None:
         self.current = self._screens[name]
         self.current.on_enter()
 
     def quit(self) -> None:
+        if self.running and self.current is not None:
+            self.current.on_quit()
         self.running = False
