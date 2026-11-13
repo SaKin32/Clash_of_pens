@@ -1,7 +1,10 @@
 """Physics world: a flat board, pens as pymunk bodies, no walls."""
 
+from typing import Optional
+
 import pymunk
 
+from common.pen import PenStats
 from common.constants import (
     BOARD_RECT,
     PHYSICS_DAMPING,
@@ -20,19 +23,36 @@ from common.constants import (
 class Pen:
     """A pen on the board: one rigid body plus game state (HP)."""
 
-    def __init__(self, space: pymunk.Space, position: tuple, angle: float, color: tuple):
-        size = (PEN_LENGTH, PEN_WIDTH)
-        moment = pymunk.moment_for_box(PEN_MASS, size)
-        self.body = pymunk.Body(PEN_MASS, moment)
+    def __init__(
+        self,
+        space: pymunk.Space,
+        position: tuple,
+        angle: float,
+        color: tuple,
+        stats: Optional[PenStats] = None,
+    ):
+        # With no stats we fall back to the plain placeholder pen from constants.py
+        self.stats = stats
+        self.length = stats.length if stats else PEN_LENGTH
+        self.width = stats.width if stats else PEN_WIDTH
+        mass = stats.mass if stats else PEN_MASS
+        size = (self.length, self.width)
+        moment = pymunk.moment_for_box(mass, size)
+        self.body = pymunk.Body(mass, moment)
         self.body.position = position
         self.body.angle = angle
         self.shape = pymunk.Poly.create_box(self.body, size)
-        self.shape.elasticity = PEN_ELASTICITY
-        self.shape.friction = PEN_FRICTION
+        self.shape.elasticity = stats.elasticity if stats else PEN_ELASTICITY
+        self.shape.friction = stats.friction if stats else PEN_FRICTION
         space.add(self.body, self.shape)
 
         self.color = color
-        self.hp = PEN_START_HP
+        self.hp = stats.hp if stats else PEN_START_HP
+
+    @property
+    def power(self) -> float:
+        """Multiplier on the shot speed (1.0 for the placeholder pen)."""
+        return self.stats.power if self.stats else 1.0
 
     def corners(self) -> list:
         """Return the four corners of the pen in world coordinates."""
@@ -48,8 +68,10 @@ class PenWorld:
         self.space.damping = PHYSICS_DAMPING
         self.pens = []
 
-    def add_pen(self, position: tuple, angle: float, color: tuple) -> Pen:
-        pen = Pen(self.space, position, angle, color)
+    def add_pen(
+        self, position: tuple, angle: float, color: tuple, stats: Optional[PenStats] = None
+    ) -> Pen:
+        pen = Pen(self.space, position, angle, color, stats)
         self.pens.append(pen)
         return pen
 
