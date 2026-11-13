@@ -17,6 +17,7 @@ from common.constants import (
     BACK_BUTTON_RECT,
 )
 from game import settings
+from game import setup as game_setup
 from game.button import Button
 from game.screen_manager import Screen
 
@@ -33,10 +34,15 @@ class ModeSelectScreen(Screen):
         self.buttons = [
             Button("Player vs Computer", self._rect(0), self.on_pvc),
             Button("Player vs Player", self._rect(1), self.on_pvp),
-            Button("Online", self._rect(2), self.on_online),
+            Button("Online (soon)", self._rect(2), self.on_online, enabled=False),
             self.music_btn,
         ]
         self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
+        self.help_btn = Button(
+            "How to Play",
+            (SCREEN_WIDTH - 24 - 220, SCREEN_HEIGHT - 84, 220, 56),
+            self.on_how_to_play,
+        )
 
     @staticmethod
     def _rect(index: int) -> tuple:
@@ -51,15 +57,21 @@ class ModeSelectScreen(Screen):
     def on_enter(self) -> None:
         self.music_btn.text = self._music_label()
 
-    # Mode callbacks (the actual modes are added in later steps)
+    # Mode callbacks
     def on_pvc(self) -> None:
-        self.manager.switch("match")
+        game_setup.begin("pvc")
+        self.manager.switch("difficulty_select")
 
     def on_pvp(self) -> None:
-        self.manager.switch("match")
+        game_setup.begin("pvp")
+        self.manager.switch("pen_select")
 
     def on_online(self) -> None:
-        print("Online selected")
+        print("Online selected")  # online play is added in step 5
+
+    def on_how_to_play(self) -> None:
+        self.manager.get("how_to_play").return_to = "mode_select"
+        self.manager.switch("how_to_play")
 
     def on_toggle_music(self) -> None:
         settings.set_music_on(not settings.is_music_on())
@@ -75,6 +87,7 @@ class ModeSelectScreen(Screen):
         for button in self.buttons:
             button.handle_event(event)
         self.back_btn.handle_event(event)
+        self.help_btn.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
@@ -85,6 +98,7 @@ class ModeSelectScreen(Screen):
         for button in self.buttons:
             button.draw(surface)
         self.back_btn.draw(surface)
+        self.help_btn.draw(surface)
 
         version = self.small_font.render(f"v{VERSION}", True, TEXT_COLOR)
         surface.blit(
