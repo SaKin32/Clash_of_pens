@@ -283,3 +283,61 @@ def test_from_state_survives_garbage():
         assert len(m.pen_keys) == 2
         assert m.mode in ("pvc", "pvp")
         assert m.can_shoot
+
+
+# ----- spin: a hit away from the middle of the pen turns it -----
+
+def turn_after_shot(grab_x, power=0.8):
+    """Degrees a pen turns when flicked sideways at grab_x along its length."""
+    m = Match()
+    pen = m.world.pens[0]
+    start = pen.body.angle
+    m.shoot((0, -1), power, (grab_x, 0))
+    for _ in range(1500):
+        m.step(DT)
+        if m.can_shoot:
+            break
+    return math.degrees(abs(pen.body.angle - start))
+
+
+def test_hit_in_the_middle_does_not_spin_the_pen():
+    assert turn_after_shot(0) == pytest.approx(0.0, abs=0.5)
+
+
+def test_hit_near_the_end_spins_the_pen():
+    assert turn_after_shot(-60) > 150
+
+
+def test_further_from_the_middle_means_more_turn():
+    turns = [turn_after_shot(x) for x in (0, -15, -30, -45)]
+    assert turns == sorted(turns)
+    assert turns[-1] > turns[1] > turns[0]
+
+
+def test_spin_never_goes_past_about_one_turn():
+    assert turn_after_shot(-85, power=1.0) < 400
+
+
+def test_spin_does_not_change_how_far_the_pen_slides():
+    def slide(x):
+        m = Match()
+        pen = m.world.pens[0]
+        m.shoot((0, -1), 0.8, (x, 0))
+        for _ in range(1500):
+            m.step(DT)
+            if m.can_shoot:
+                break
+        return pen.body.position.get_distance((190 + 220, 360))
+
+    assert slide(-70) == pytest.approx(slide(0), rel=0.05)
+
+
+def test_spin_stops_by_itself():
+    m = Match()
+    m.shoot((0, -1), 1.0, (-85, 0))
+    for _ in range(1500):
+        m.step(DT)
+        if m.can_shoot:
+            break
+    assert m.can_shoot  # the turn ended, so the spin died away
+    assert abs(m.world.pens[0].body.angular_velocity) < 0.5
