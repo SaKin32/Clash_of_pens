@@ -1,6 +1,7 @@
 """How to play: the rules on one page. Reachable from the mode screen and the pause menu."""
 
 import pygame
+from game.assets import load_font
 
 from common.constants import (
     SCREEN_WIDTH,
@@ -48,9 +49,9 @@ SECTIONS = (
 class HowToPlayScreen(Screen):
     def __init__(self, manager):
         super().__init__(manager)
-        self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
-        self.section_font = pygame.font.Font(None, FONT_SIZE_BUTTON)
-        self.font = pygame.font.Font(None, FONT_SIZE_SMALL + 4)
+        self.heading_font = load_font(FONT_SIZE_HEADING)
+        self.section_font = load_font(FONT_SIZE_BUTTON)
+        self.font = load_font(FONT_SIZE_SMALL + 4)
         self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
         self.return_to = "mode_select"  # whoever opens this screen sets where Back goes
 

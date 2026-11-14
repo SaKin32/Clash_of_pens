@@ -3,6 +3,7 @@
 from typing import Callable, Optional
 
 import pygame
+from game.assets import load_font
 
 from common.constants import (
     BUTTON_COLOR,
@@ -29,7 +30,7 @@ class Button:
         self.rect = pygame.Rect(rect)
         self.on_click = on_click
         self.enabled = enabled
-        self.font = pygame.font.Font(None, font_size)
+        self.font = load_font(font_size)
 
     def handle_event(self, event: pygame.event.Event) -> None:
         """Call on_click when the left mouse button is pressed on the button."""

@@ -11,11 +11,13 @@ from game import settings
 from game.about_screen import AboutScreen
 from game.difficulty_screen import DifficultyScreen
 from game.how_to_play_screen import HowToPlayScreen
+from game.loading_screen import LoadingScreen
 from game.match_screen import MatchScreen
 from game.mode_select_screen import ModeSelectScreen
 from game.pen_select_screen import PenSelectScreen
 from game.team_size_screen import TeamSizeScreen
 from game.screen_manager import ScreenManager
+from game.splash_screen import SplashScreen
 from game.title_screen import TitleScreen
 
 
@@ -27,7 +29,9 @@ def main():
     clock = pygame.time.Clock()
 
     manager = ScreenManager()
+    manager.register("splash", SplashScreen(manager))
     manager.register("title", TitleScreen(manager))
+    manager.register("loading", LoadingScreen(manager))
     manager.register("mode_select", ModeSelectScreen(manager))
     manager.register("about", AboutScreen(manager))
     manager.register("difficulty_select", DifficultyScreen(manager))
@@ -35,7 +39,7 @@ def main():
     manager.register("pen_select", PenSelectScreen(manager))
     manager.register("how_to_play", HowToPlayScreen(manager))
     manager.register("match", MatchScreen(manager))
-    manager.switch("title")
+    manager.switch("splash")
 
     while manager.running:
         dt = clock.tick(FPS) / 1000

@@ -1,6 +1,7 @@
 """Title screen: background, game title, main menu buttons and version label."""
 
 import pygame
+from game import music
 
 from common.constants import (
     GAME_TITLE,
@@ -20,6 +21,8 @@ from common.constants import (
 from common.paths import resource_path
 from game import save
 from game import settings
+from game.assets import load_cover_image, load_font
+from game.splash_screen import GROUP_FILE
 from game.button import Button
 from game.screen_manager import Screen
 
@@ -31,8 +34,8 @@ class TitleScreen(Screen):
 
     def __init__(self, manager):
         super().__init__(manager)
-        self.title_font = pygame.font.Font(None, FONT_SIZE_TITLE)
-        self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
+        self.title_font = load_font(FONT_SIZE_TITLE)
+        self.small_font = load_font(FONT_SIZE_SMALL)
         self.has_save = save.has_save()
 
         self.background = self._load_background()
@@ -65,13 +68,8 @@ class TitleScreen(Screen):
 
     @staticmethod
     def _load_background():
-        """Load the background image, or return None if the file is missing."""
-        try:
-            image = pygame.image.load(resource_path(BACKGROUND_FILE)).convert()
-        except (pygame.error, FileNotFoundError):
-            return None
-        return pygame.transform.smoothscale(image, (SCREEN_WIDTH, SCREEN_HEIGHT))
-
+        """Load the group photo as the background, or return None if the file is missing."""
+        return load_cover_image(GROUP_FILE, (SCREEN_WIDTH, SCREEN_HEIGHT))
     @staticmethod
     def _music_label() -> str:
         return "Music: On" if settings.is_music_on() else "Music: Off"
@@ -81,17 +79,22 @@ class TitleScreen(Screen):
         self.has_save = save.has_save()
         self.resume_btn.enabled = self.has_save
         self.music_btn.text = self._music_label()
+        music.start()
 
     # Button callbacks
     def on_new_game(self) -> None:
-        self.manager.switch("mode_select")
+        self.manager.get("loading").go("mode_select")
 
     def on_resume(self) -> None:
         state = save.load_game()
         if state is None:
             return
-        self.manager.get("match").resume_from_save(state)
-        self.manager.switch("match")
+
+        def open_match():
+            self.manager.get("match").resume_from_save(state)
+            self.manager.switch("match")
+
+        self.manager.get("loading").go(action=open_match)
 
     def on_about(self) -> None:
         self.manager.switch("about")
@@ -99,6 +102,7 @@ class TitleScreen(Screen):
     def on_toggle_music(self) -> None:
         settings.set_music_on(not settings.is_music_on())
         self.music_btn.text = self._music_label()
+        music.refresh()
 
     def on_quit(self) -> None:
         # A match in progress is saved by the match screen itself (Save & Exit, or closing
@@ -112,12 +116,8 @@ class TitleScreen(Screen):
     def draw(self, surface: pygame.Surface) -> None:
         if self.background:
             surface.blit(self.background, (0, 0))
-            surface.blit(self.overlay, (0, 0))
         else:
             surface.fill(BG_COLOR)
-
-        title = self.title_font.render(GAME_TITLE, True, TITLE_COLOR)
-        surface.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 160)))
 
         for button in self.buttons:
             button.draw(surface)

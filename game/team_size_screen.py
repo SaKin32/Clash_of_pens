@@ -1,6 +1,7 @@
 """Team size screen for Team Match: 2 vs 2 or 3 vs 3 on one computer."""
 
 import pygame
+from game.assets import load_font
 
 from common.constants import (
     SCREEN_WIDTH,
@@ -27,8 +28,8 @@ SIZES = (
 class TeamSizeScreen(Screen):
     def __init__(self, manager):
         super().__init__(manager)
-        self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
-        self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
+        self.heading_font = load_font(FONT_SIZE_HEADING)
+        self.small_font = load_font(FONT_SIZE_SMALL)
         self.buttons = [
             Button(label, self._rect(i), lambda n=size: self.choose(n))
             for i, (size, label, _) in enumerate(SIZES)

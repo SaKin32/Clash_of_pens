@@ -9,6 +9,7 @@ import random
 from typing import Optional
 
 import pygame
+from game import music
 import pymunk
 
 from common.constants import (
@@ -52,7 +53,7 @@ from common.constants import (
 from common.pen import get_pen
 from game import save, settings
 from game.ai import AIPlayer
-from game.assets import load_image
+from game.assets import load_image, load_font
 from game.button import Button
 from game.match import Match, PLAYER_COLORS
 from game.physics import Pen, PenWorld
@@ -74,9 +75,9 @@ class MatchScreen(Screen):
 
     def __init__(self, manager):
         super().__init__(manager)
-        self.font = pygame.font.Font(None, FONT_SIZE_SMALL)
-        self.big_font = pygame.font.Font(None, FONT_SIZE_BUTTON)
-        self.huge_font = pygame.font.Font(None, FONT_SIZE_HEADING)
+        self.font = load_font(FONT_SIZE_SMALL)
+        self.big_font = load_font(FONT_SIZE_BUTTON)
+        self.huge_font = load_font(FONT_SIZE_HEADING)
 
         self.match = Match()
         self.ai: Optional[AIPlayer] = None
@@ -125,6 +126,7 @@ class MatchScreen(Screen):
 
     def on_enter(self) -> None:
         self._update_music_label()
+        music.stop()
 
     def on_resume(self) -> None:
         self.paused = False

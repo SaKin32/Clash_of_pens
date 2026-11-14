@@ -1,40 +1,176 @@
-"""About Us screen: team members, roles and photos."""
+"""About Us screen: cinematic rolling credits over a blurred, darkened background."""
 
 import pygame
 
 from common.constants import (
+    GAME_TITLE,
+    VERSION,
     SCREEN_WIDTH,
+    SCREEN_HEIGHT,
     BG_COLOR,
     TEXT_COLOR,
+    TITLE_COLOR,
     HEADING_COLOR,
-    FONT_SIZE_HEADING,
+    FONT_SIZE_TITLE,
     FONT_SIZE_BUTTON,
     FONT_SIZE_SMALL,
     BACK_BUTTON_RECT,
 )
+from game.assets import load_image, load_cover_image, load_font
 from game.button import Button
 from game.screen_manager import Screen
 
-# Fill in real names and roles later. Photos can be added to each entry.
+BACKGROUND_FILE = "Clash_of_Pens_BG.png"
+LOGO_FILE = "Logo.webp"
+
+CREDITS_TIME = 20.0          # seconds for the credits to roll through once, then it starts again
+FADE_HEIGHT = 130            # pixels at the top and bottom where the text fades out
+BLUR_RADIUS = 8              # blur strength (applied on a half-size copy)
+DARKEN_ALPHA = 100           # 0 = no dark layer, 255 = black
+LOGO_MAX_SIZE = (620, 240)
+MUTED_COLOR = (170, 175, 190)  # student ID text
+
+NAME_COLOR = (255, 255, 255)   # names are pure white
+OUTLINE_COLOR = (0, 0, 0)      # thin border around the credit text
+OUTLINE_ALPHA = 140            # 0 = no border, 255 = solid black border
+
+# (name, student ID, role). Edit this list to change the credits.
 TEAM_MEMBERS = [
-    ("Member 1", "Role"),
-    ("Member 2", "Role"),
-    ("Member 3", "Role"),
-    ("Member 4", "Role"),
-    ("Member 5", "Role"),
-    ("Member 6", "Role"),
+    ("Luckman Rafique", "20255103041"),
+    ("Md Taimur Rahman", "20255103046"),
+    ("Md Showkotul Islam", "20255103058"),
+    ("Md Shimul Islam", "20255103060"),
+    ("Md Siam Khan", "20255103069"),
+    ("Tanvir Ahmed", "20255103081"),
+]
+FOOTER_LINES = [
+    "Built with Python, pygame-ce, pymunk",
+    f"Version {VERSION}",
 ]
 
 
+def blur_surface(image: pygame.Surface, radius: int) -> pygame.Surface:
+    """Return a blurred copy of the image. Works on a half-size copy to stay fast."""
+    size = image.get_size()
+    small = pygame.transform.smoothscale(image, (size[0] // 2, size[1] // 2))
+    if hasattr(pygame.transform, "gaussian_blur"):
+        small = pygame.transform.gaussian_blur(small, radius)
+    else:
+        # Older pygame-ce: shrink a lot and grow back, which also blurs
+        tiny = pygame.transform.smoothscale(small, (size[0] // 16, size[1] // 16))
+        small = pygame.transform.smoothscale(tiny, small.get_size())
+    return pygame.transform.smoothscale(small, size)
+
+
+def render_outlined(font, text, color, outline=1, bold=False):
+    """Text with a thin dark border, so it stays easy to read on any background.
+
+    outline = border thickness in pixels. bold = draw the letters 1 pixel thicker.
+    """
+    base = font.render(text, True, color)
+    extra = 1 if bold else 0
+    size = (base.get_width() + 2 * outline + extra, base.get_height() + 2 * outline)
+    border = pygame.Surface(size, pygame.SRCALPHA)
+    dark = font.render(text, True, OUTLINE_COLOR)
+    for dx in range(-outline, outline + 1):
+        for dy in range(-outline, outline + 1):
+            if dx * dx + dy * dy <= outline * outline + 1:
+                for ex in range(extra + 1):
+                    border.blit(dark, (outline + dx + ex, outline + dy))
+    border.set_alpha(OUTLINE_ALPHA)
+    result = pygame.Surface(size, pygame.SRCALPHA)
+    result.blit(border, (0, 0))
+    for ex in range(extra + 1):
+        result.blit(base, (outline + ex, outline))
+    return result
+
+
 class AboutScreen(Screen):
-    """Shows the team credits."""
+    """Credits roll from the bottom to the top, then start again. ESC or Back leaves."""
 
     def __init__(self, manager):
         super().__init__(manager)
-        self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
-        self.name_font = pygame.font.Font(None, FONT_SIZE_BUTTON)
-        self.role_font = pygame.font.Font(None, FONT_SIZE_SMALL)
+        self.title_font = load_font(FONT_SIZE_TITLE)
+        self.name_font = load_font(FONT_SIZE_BUTTON)
+        self.small_font = load_font(FONT_SIZE_SMALL)
         self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
+
+        self.background = None   # built the first time the screen opens
+        self.credits = self._build_credits()
+        self.layer = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.fade_mask = self._build_fade_mask()
+        self.time = 0.0
+
+    # ----- building (done once) -----
+
+    def _load_logo(self):
+        """Load the logo scaled to fit LOGO_MAX_SIZE, or None if the file is missing."""
+        image = load_image(LOGO_FILE)
+        if image is None:
+            return None
+        w, h = image.get_size()
+        scale = min(LOGO_MAX_SIZE[0] / w, LOGO_MAX_SIZE[1] / h)
+        size = (max(1, round(w * scale)), max(1, round(h * scale)))
+        return pygame.transform.smoothscale(image, size)
+
+    def _build_credits(self) -> pygame.Surface:
+        """Draw the whole credits text onto one tall surface."""
+        logo = self._load_logo()
+        blocks = []  # (surface, space_below)
+        if logo:
+            blocks.append((logo, 90))
+        else:
+            blocks.append((render_outlined(self.title_font, GAME_TITLE, TITLE_COLOR, outline=3), 90))
+        for member in TEAM_MEMBERS:
+            name, student_id = member[0], member[1]
+            role = member[2] if len(member) > 2 else ""  # the role is optional
+            blocks.append((render_outlined(self.name_font, name, NAME_COLOR, outline=1, bold=True), 4))
+            if role:
+                blocks.append((render_outlined(self.small_font, student_id, MUTED_COLOR), 4))
+                blocks.append((render_outlined(self.small_font, role, HEADING_COLOR), 54))
+            else:
+                blocks.append((render_outlined(self.small_font, student_id, MUTED_COLOR), 54))
+        blocks.append((self.small_font.render("", True, TEXT_COLOR), 40))
+        for line in FOOTER_LINES:
+            blocks.append((render_outlined(self.small_font, line, MUTED_COLOR), 8))
+
+        height = sum(s.get_height() + gap for s, gap in blocks)
+        credits = pygame.Surface((SCREEN_WIDTH, height), pygame.SRCALPHA)
+        y = 0
+        for surf, gap in blocks:
+            credits.blit(surf, surf.get_rect(midtop=(SCREEN_WIDTH // 2, y)))
+            y += surf.get_height() + gap
+        return credits
+
+    @staticmethod
+    def _build_fade_mask() -> pygame.Surface:
+        """White in the middle, fading to transparent at the top and bottom edges."""
+        mask = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        mask.fill((255, 255, 255, 255))
+        for i in range(FADE_HEIGHT):
+            alpha = int(255 * i / FADE_HEIGHT)
+            color = (255, 255, 255, alpha)
+            pygame.draw.line(mask, color, (0, i), (SCREEN_WIDTH, i))
+            pygame.draw.line(mask, color, (0, SCREEN_HEIGHT - 1 - i), (SCREEN_WIDTH, SCREEN_HEIGHT - 1 - i))
+        return mask
+
+    def _build_background(self):
+        """Blurred + darkened background, or None if the image is missing."""
+        image = load_cover_image(BACKGROUND_FILE, (SCREEN_WIDTH, SCREEN_HEIGHT))
+        if image is None:
+            return None
+        background = image.copy()
+        dark = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        dark.fill((0, 0, 0, DARKEN_ALPHA))
+        background.blit(dark, (0, 0))
+        return background
+
+    # ----- screen -----
+
+    def on_enter(self) -> None:
+        self.time = 0.0
+        if self.background is None:
+            self.background = self._build_background()
 
     def on_back(self) -> None:
         self.manager.switch("title")
@@ -45,20 +181,29 @@ class AboutScreen(Screen):
             return
         self.back_btn.handle_event(event)
 
+    def update(self, dt: float) -> None:
+        # The credits start just below the screen and leave just above it, in CREDITS_TIME seconds
+        self.time = (self.time + min(dt, 0.1)) % CREDITS_TIME
+
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill(BG_COLOR)
+        if self.background:
+            surface.blit(self.background, (0, 0))
+        else:
+            surface.fill(BG_COLOR)
 
-        heading = self.heading_font.render("About Us", True, HEADING_COLOR)
-        surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 120)))
-
-        # Two columns, three rows
-        for i, (name, role) in enumerate(TEAM_MEMBERS):
-            col, row = i % 2, i // 2
-            x = SCREEN_WIDTH // 2 + (col - 0.5) * 460
-            y = 240 + row * 110
-            name_surf = self.name_font.render(name, True, TEXT_COLOR)
-            role_surf = self.role_font.render(role, True, TEXT_COLOR)
-            surface.blit(name_surf, name_surf.get_rect(center=(x, y)))
-            surface.blit(role_surf, role_surf.get_rect(center=(x, y + 34)))
+        distance = SCREEN_HEIGHT + self.credits.get_height()
+        top = SCREEN_HEIGHT - distance * (self.time / CREDITS_TIME)
+        self.layer.fill((0, 0, 0, 0))
+        self.layer.blit(self.credits, (0, int(top)))
+        self.layer.blit(self.fade_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+        surface.blit(self.layer, (0, 0))
 
         self.back_btn.draw(surface)
+        self._draw_back_arrow(surface)
+
+    def _draw_back_arrow(self, surface: pygame.Surface) -> None:
+        """Small left arrow on the Back button."""
+        rect = self.back_btn.rect
+        cx, cy = rect.left + 26, rect.centery
+        points = [(cx + 8, cy - 11), (cx - 8, cy), (cx + 8, cy + 11)]
+        pygame.draw.polygon(surface, TEXT_COLOR, points)

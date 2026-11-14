@@ -1,6 +1,8 @@
 """Mode selection screen: Player vs Computer, Player vs Player, Team Match, Online."""
 
 import pygame
+from game import music
+from game.assets import load_font
 
 from common.constants import (
     SCREEN_WIDTH,
@@ -27,8 +29,8 @@ class ModeSelectScreen(Screen):
 
     def __init__(self, manager):
         super().__init__(manager)
-        self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
-        self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
+        self.heading_font = load_font(FONT_SIZE_HEADING)
+        self.small_font = load_font(FONT_SIZE_SMALL)
 
         self.music_btn = Button(self._music_label(), self._rect(4), self.on_toggle_music)
         self.buttons = [
@@ -57,6 +59,7 @@ class ModeSelectScreen(Screen):
 
     def on_enter(self) -> None:
         self.music_btn.text = self._music_label()
+        music.start()
 
     # Mode callbacks
     def on_pvc(self) -> None:
@@ -81,6 +84,7 @@ class ModeSelectScreen(Screen):
     def on_toggle_music(self) -> None:
         settings.set_music_on(not settings.is_music_on())
         self.music_btn.text = self._music_label()
+        music.refresh()
 
     def on_back(self) -> None:
         self.manager.switch("title")

@@ -3,6 +3,7 @@
 import random
 
 import pygame
+from game.assets import load_font
 
 from common.constants import (
     SCREEN_WIDTH,
@@ -43,9 +44,9 @@ STAT_BARS = (
 class PenSelectScreen(Screen):
     def __init__(self, manager):
         super().__init__(manager)
-        self.heading_font = pygame.font.Font(None, 56)
-        self.name_font = pygame.font.Font(None, FONT_SIZE_BUTTON)
-        self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
+        self.heading_font = load_font(56)
+        self.name_font = load_font(FONT_SIZE_BUTTON)
+        self.small_font = load_font(FONT_SIZE_SMALL)
         self.selected = PEN_ORDER[0]
         self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
         self.next_btn = Button(

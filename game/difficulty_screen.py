@@ -1,6 +1,7 @@
 """Difficulty screen for Player vs Computer: Easy, Medium or Hard."""
 
 import pygame
+from game.assets import load_font
 
 from common.constants import (
     SCREEN_WIDTH,
@@ -29,8 +30,8 @@ DESCRIPTIONS = {
 class DifficultyScreen(Screen):
     def __init__(self, manager):
         super().__init__(manager)
-        self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
-        self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
+        self.heading_font = load_font(FONT_SIZE_HEADING)
+        self.small_font = load_font(FONT_SIZE_SMALL)
         self.buttons = [
             Button(PROFILES[key].name, self._rect(i), lambda k=key: self.choose(k))
             for i, key in enumerate(PROFILES)
