@@ -82,6 +82,7 @@ class MatchScreen(Screen):
         self.ai: Optional[AIPlayer] = None
         self.paused = False
         self.dragging = False
+        self.drag_pen = 0        # index of the pen being pulled back
         self.grab_local = pymunk.Vec2d(0, 0)
         self._turn_id = -1       # used to notice that a new turn began
         self._ai_wait = 0.0      # seconds left before the computer flicks
@@ -160,7 +161,7 @@ class MatchScreen(Screen):
         return self.ai is None or self.match.current != AI_PLAYER_INDEX
 
     def _grab_world(self) -> pymunk.Vec2d:
-        return self.active_pen.body.local_to_world(self.grab_local)
+        return self.match.world.pens[self.drag_pen].body.local_to_world(self.grab_local)
 
     def _pull_vector(self, mouse_pos: tuple) -> pymunk.Vec2d:
         pull = self._grab_world() - pymunk.Vec2d(*mouse_pos)
@@ -172,19 +173,27 @@ class MatchScreen(Screen):
     def _power(pull: pymunk.Vec2d) -> float:
         return (pull.length / MAX_PULL_DISTANCE) ** POWER_CURVE
 
-    def _grabbed(self, mouse_pos: tuple) -> bool:
-        info = self.active_pen.shape.point_query(mouse_pos)
-        return info.distance <= GRAB_MARGIN
+    def _grabbed(self, mouse_pos: tuple) -> Optional[int]:
+        """Index of the current team's pen under the mouse (the closest one), or None."""
+        m = self.match
+        best, best_distance = None, GRAB_MARGIN
+        for i in m.alive_indexes(m.current):
+            distance = m.world.pens[i].shape.point_query(mouse_pos).distance
+            if distance <= best_distance:
+                best, best_distance = i, distance
+        return best
 
     def _fire(self, mouse_pos: tuple) -> None:
         pull = self._pull_vector(mouse_pos)
         if pull.length < MIN_PULL_DISTANCE:
             return
-        self.match.shoot(pull, self._power(pull), self.grab_local)
+        self.match.shoot(pull, self._power(pull), self.grab_local, self.drag_pen)
 
     def _player_label(self, index: int) -> str:
         if self.ai is not None and index == AI_PLAYER_INDEX:
             return "Computer"
+        if self.match.team_size > 1:
+            return f"Team {index + 1}"
         return f"Player {index + 1}"
 
     # ----- events -----
@@ -222,8 +231,10 @@ class MatchScreen(Screen):
             return
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self._grabbed(event.pos):
-                self.grab_local = self.active_pen.body.world_to_local(event.pos)
+            pen_index = self._grabbed(event.pos)
+            if pen_index is not None:
+                self.drag_pen = pen_index
+                self.grab_local = m.world.pens[pen_index].body.world_to_local(event.pos)
                 self.dragging = True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.dragging:
@@ -249,7 +260,7 @@ class MatchScreen(Screen):
             self._ai_wait -= dt
             if self._ai_wait <= 0:
                 shot = self.ai.choose_shot(m)
-                m.shoot(shot.direction, shot.power)
+                m.shoot(shot.direction, shot.power, shot.grab)
 
         # A finished match cannot be resumed, so remove its save
         if m.match_winner is not None and not self._save_cleared:
@@ -324,6 +335,8 @@ class MatchScreen(Screen):
 
     def _draw_pen(self, surface: pygame.Surface, index: int, pen: Pen) -> None:
         m = self.match
+        if pen.removed:
+            return
         corners = pen.corners()
         center = pen.body.position
         offset = pymunk.Vec2d(0, 0)
@@ -371,10 +384,11 @@ class MatchScreen(Screen):
 
     def _draw_turn_indicator(self, surface: pygame.Surface) -> None:
         m = self.match
-        pen = self.active_pen
-        if m.can_shoot:
-            c = (int(pen.body.position.x), int(pen.body.position.y))
-            pygame.draw.circle(surface, TURN_RING_COLOR, c, 18, width=2)
+        if m.can_shoot and self._human_turn:
+            for i in m.alive_indexes(m.current):
+                pos = m.world.pens[i].body.position
+                thick = 4 if (self.dragging and i == self.drag_pen) else 2
+                pygame.draw.circle(surface, TURN_RING_COLOR, (int(pos.x), int(pos.y)), 18, width=thick)
         label = f"{self._player_label(m.current)}'s turn"
         if self.ai is not None and m.current == AI_PLAYER_INDEX and m.can_shoot:
             label = "Computer is thinking..."
@@ -392,8 +406,12 @@ class MatchScreen(Screen):
     def _draw_pen_names(self, surface: pygame.Surface) -> None:
         m = self.match
         for i, x in ((0, 200), (1, SCREEN_WIDTH - 200)):
-            name = get_pen(m.pen_keys[i]).name
-            text = self.font.render(f"{self._player_label(i)}: {name}", True, PLAYER_COLORS[i])
+            if m.team_size > 1:
+                alive = len(m.alive_indexes(i))
+                info = f"{alive} of {m.team_size} pens left"
+            else:
+                info = get_pen(m.pen_keys[i]).name
+            text = self.font.render(f"{self._player_label(i)}: {info}", True, PLAYER_COLORS[i])
             rect = text.get_rect(midleft=(x, 60)) if i == 0 else text.get_rect(midright=(x, 60))
             surface.blit(text, rect)
 
@@ -421,6 +439,7 @@ class MatchScreen(Screen):
         if not m.round_over or not m.round_result_applied:
             return
 
+        note = ""
         if m.match_winner is not None:
             msg = f"{self._player_label(m.match_winner)} wins the match!"
             sub_text = "Press R for a new match    ESC: menu"
@@ -434,11 +453,16 @@ class MatchScreen(Screen):
             else:
                 msg = f"{self._player_label(m.round_winner)} wins the round!"
             sub_text = "Press SPACE for the next round"
+            if m.draw_by_limit and m.last_result == "win":
+                note = "Turn limit reached: more pens left on the board"
 
         text = self.huge_font.render(msg, True, FALL_BANNER_COLOR)
         surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
         sub = self.big_font.render(sub_text, True, TEXT_COLOR)
         surface.blit(sub, sub.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 56)))
+        if note:
+            text = self.font.render(note, True, TEXT_COLOR)
+            surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 96)))
 
     def _draw_aim(self, surface: pygame.Surface) -> None:
         pull = self._pull_vector(pygame.mouse.get_pos())
@@ -448,7 +472,7 @@ class MatchScreen(Screen):
         pygame.draw.line(surface, PULL_LINE_COLOR, start, start - pull, 3)
         pygame.draw.circle(surface, PULL_LINE_COLOR, (int(start.x), int(start.y)), 5)
 
-        speed = self._power(pull) * MAX_SHOT_SPEED * self.active_pen.power
+        speed = self._power(pull) * MAX_SHOT_SPEED * self.match.world.pens[self.drag_pen].power
         distance = predicted_distance(speed)
         direction = pull.normalized()
         step = 18
