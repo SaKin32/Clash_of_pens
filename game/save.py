@@ -8,8 +8,8 @@ from platformdirs import user_data_dir
 
 from common.constants import SAVE_DIR_NAME, SAVE_FILE_NAME, SAVE_VERSION
 
-# Only these modes can be saved. Online matches cannot be resumed.
-SAVABLE_MODES = ("pvc", "pvp")
+# Only these modes can be saved. Online matches cannot be resumed (team matches can).
+SAVABLE_MODES = ("pvc", "pvp", "team")
 
 
 def save_path() -> str:
