@@ -34,6 +34,11 @@ def _find_track():
     return None
 
 
+def _volume() -> float:
+    """Music Off does not stop the song, it only turns the sound down to 0."""
+    return MUSIC_VOLUME if settings.is_music_on() else 0.0
+
+
 def _play() -> None:
     global _warned
     try:
@@ -43,7 +48,7 @@ def _play() -> None:
                 raise pygame.error("pygame cannot play .mp4 files. Convert the song to .mp3 or .ogg")
             raise pygame.error(f"no .ogg/.mp3/.wav file found at {MUSIC_BASE}")
         pygame.mixer.music.load(path)
-        pygame.mixer.music.set_volume(MUSIC_VOLUME)
+        pygame.mixer.music.set_volume(_volume())
         pygame.mixer.music.play(-1)  # -1 = repeat forever
     except pygame.error as error:
         if not _warned:  # say it once, never crash the game over music
@@ -54,12 +59,12 @@ def _play() -> None:
 def _apply() -> None:
     if not _ready():
         return
-    should_play = _wanted and settings.is_music_on()
     playing = pygame.mixer.music.get_busy()
-    if should_play and not playing:
+    if _wanted and not playing:
         _play()
-    elif not should_play and playing:
+    elif not _wanted and playing:
         pygame.mixer.music.stop()
+    pygame.mixer.music.set_volume(_volume())  # Off = silent, but the song keeps running
 
 
 def start() -> None:
