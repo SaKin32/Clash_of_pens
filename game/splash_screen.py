@@ -14,6 +14,7 @@ from common.constants import (
     FONT_SIZE_BUTTON,
 )
 from game.assets import load_image, load_cover_image, load_font
+from game.progress_bar import LoadingBar
 from game.screen_manager import Screen
 
 LOGO_FILE = "Clash_of_pen_logo.png"
@@ -38,9 +39,7 @@ class SplashScreen(Screen):
         self.text_font = load_font(FONT_SIZE_BUTTON)
         self.photo = load_cover_image(GROUP_FILE, (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.logo = self._load_logo()
-        # Dark band at the bottom so the loading text is easy to read on any photo
-        self.band = pygame.Surface((SCREEN_WIDTH, 170), pygame.SRCALPHA)
-        self.band.fill((0, 0, 0, 150))
+        self.bar = LoadingBar(self.text_font)
         self.phase = "logo"
         self.timer = 0.0
 
@@ -107,17 +106,4 @@ class SplashScreen(Screen):
             # Fade the photo in from black at the start
             cover = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
             cover.set_alpha(int(255 * (1 - self._fade())))
-            surface.blit(cover, (0, 0))
-        surface.blit(self.band, (0, SCREEN_HEIGHT - self.band.get_height()))
-
-        progress = min(1.0, self.timer / LOADING_TIME)
-        label = self.text_font.render(f"Loading...  {int(progress * 100)}%", True, TEXT_COLOR)
-        surface.blit(label, label.get_rect(midbottom=(SCREEN_WIDTH // 2, BAR_RECT[1] - 14)))
-
-        bar = pygame.Rect(BAR_RECT)
-        pygame.draw.rect(surface, BAR_BG_COLOR, bar, border_radius=9)
-        if progress > 0:
-            fill = bar.copy()
-            fill.width = max(bar.height, int(bar.width * progress))
-            pygame.draw.rect(surface, BAR_FILL_COLOR, fill, border_radius=9)
-        pygame.draw.rect(surface, TEXT_COLOR, bar, width=2, border_radius=9)
+            self.bar.draw(surface, self.timer / LOADING_TIME)
