@@ -34,12 +34,13 @@ class AiProfile:
     power_range: Tuple[float, float]  # power range for random flicks (Easy only)
     blunder_chance: float     # chance of a flick in a random direction (Easy only)
     safety: float             # how much the AI cares about keeping its own pen inside
+    grab_spread: float = 0.0  # how far from the pen's middle it may hit (0 = always the middle, 1 = anywhere)
 
 
 PROFILES = {
-    "easy": AiProfile("Easy", 0, 0.0, 0, 0.30, 0.25, (0.35, 0.85), 0.15, 0.0),
-    "medium": AiProfile("Medium", 18, 0.45, 0, 0.07, 0.10, (0.3, 1.0), 0.0, 0.35),
-    "hard": AiProfile("Hard", 70, 0.8, 8, 0.015, 0.03, (0.25, 1.0), 0.0, 0.5),
+    "easy": AiProfile("Easy", 0, 0.0, 0, 0.30, 0.25, (0.35, 0.85), 0.15, 0.0, 0.0),
+    "medium": AiProfile("Medium", 18, 0.45, 0, 0.07, 0.10, (0.3, 1.0), 0.0, 0.35, 0.4),
+    "hard": AiProfile("Hard", 70, 0.8, 8, 0.015, 0.03, (0.25, 1.0), 0.0, 0.5, 0.9),
 }
 DIFFICULTIES = tuple(PROFILES.keys())
 DEFAULT_DIFFICULTY = "medium"
@@ -54,6 +55,7 @@ class Shot:
 
     angle: float
     power: float  # 0..1, after the power curve
+    grab: tuple = (0.0, 0.0)  # where on the pen it is hit, in the pen's own coordinates
 
     @property
     def direction(self) -> pymunk.Vec2d:
@@ -71,6 +73,8 @@ class AIPlayer:
     # ----- public -----
 
     def choose_shot(self, match: Match) -> Shot:
+        if match.team_size != 1:
+            raise ValueError("The computer does not play team matches yet.")
         me = match.current
         opp = 1 - me
         mine = match.world.pens[me].body.position
@@ -81,12 +85,13 @@ class AIPlayer:
             return self._easy_shot(to_opp)
 
         best, best_score = None, -math.inf
-        for angle, power in self._candidates(to_opp):
-            score = self._simulate(match, me, angle, power)
+        pen = match.world.pens[me]
+        for angle, power, grab in self._candidates(to_opp, pen):
+            score = self._simulate(match, me, angle, power, grab)
             if score > best_score:
-                best, best_score = (angle, power), score
-        angle, power = best
-        return self._with_noise(angle, power)
+                best, best_score = (angle, power, grab), score
+        angle, power, grab = best
+        return self._with_noise(angle, power, grab)
 
     # ----- Easy -----
 
@@ -101,24 +106,35 @@ class AIPlayer:
 
     # ----- Medium / Hard -----
 
-    def _candidates(self, to_opp: float):
+    def _random_grab(self, pen) -> tuple:
+        """A random spot on the pen to hit. A spot away from the middle makes the pen spin."""
+        spread = self.profile.grab_spread
+        if spread <= 0:
+            return (0.0, 0.0)
+        return (
+            self.rng.uniform(-1, 1) * spread * pen.length / 2,
+            self.rng.uniform(-1, 1) * spread * pen.width / 2,
+        )
+
+    def _candidates(self, to_opp: float, pen):
         p = self.profile
         rng = self.rng
-        # Always try straight at the opponent with a few different powers
+        # Always try straight at the opponent with a few different powers, hitting the middle
         for power in (0.5, 0.7, 0.85, 1.0):
-            yield to_opp, power
+            yield to_opp, power, (0.0, 0.0)
         for _ in range(max(0, p.candidates - 4)):
-            yield to_opp + rng.uniform(-p.spread, p.spread), rng.uniform(*p.power_range)
+            yield (to_opp + rng.uniform(-p.spread, p.spread), rng.uniform(*p.power_range),
+                   self._random_grab(pen))
         for _ in range(p.wild_candidates):
-            yield rng.uniform(-math.pi, math.pi), rng.uniform(*p.power_range)
+            yield rng.uniform(-math.pi, math.pi), rng.uniform(*p.power_range), self._random_grab(pen)
 
-    def _with_noise(self, angle: float, power: float) -> Shot:
+    def _with_noise(self, angle: float, power: float, grab: tuple = (0.0, 0.0)) -> Shot:
         p = self.profile
         angle += self.rng.gauss(0, p.aim_noise)
         power *= 1 + self.rng.gauss(0, p.power_noise)
-        return Shot(angle, max(AI_MIN_POWER, min(1.0, power)))
+        return Shot(angle, max(AI_MIN_POWER, min(1.0, power)), grab)
 
-    def _simulate(self, match: Match, me: int, angle: float, power: float) -> float:
+    def _simulate(self, match: Match, me: int, angle: float, power: float, grab=(0.0, 0.0)) -> float:
         """Play one flick out in a private copy of the board and score the result."""
         opp = 1 - me
         sim = PenWorld()
@@ -130,7 +146,7 @@ class AIPlayer:
         board = tuple(match.board.target) if match.board.target is not None else match.board.as_tuple()
         live_board = match.board.as_tuple()
 
-        apply_flick(sim.pens[me], Shot(angle, power).direction, power)
+        apply_flick(sim.pens[me], Shot(angle, power).direction, power, grab)
         fell = [False, False]
         for _ in range(AI_SIM_MAX_FRAMES):
             sim.step(1 / AI_SIM_FPS)
