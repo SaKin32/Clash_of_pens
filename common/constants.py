@@ -73,7 +73,8 @@ MAX_SHOT_SPEED = 1200  # launch speed at full power (pixels per second)
 SETTLE_SPEED = 8.0  # below this speed a pen counts as stopped
 SETTLE_ANGULAR_SPEED = 0.2  # below this spin a pen counts as stopped
 POWER_CURVE = 1.5  # 1.0 = linear. Higher = gentler light flicks, stronger full pulls
-MAX_SPIN = 10.0  # cap on spin (radians per second) from an off-center hit
+MAX_SPIN = 24.0  # cap on spin (radians per second) from an off-center hit
+ANGULAR_DAMPING = 0.02  # fraction of spin kept after 1 second. Spin fades slower than sliding, so a hit near the end turns the pen up to about one full turn
 
 # Aiming visuals
 AIM_LINE_COLOR = (255, 255, 255)
@@ -133,3 +134,11 @@ AI_SIM_MAX_FRAMES = 150          # longest a tried shot is simulated (2.5 s of g
 AI_MIN_POWER = 0.12              # AI never flicks softer than this (fraction of full power)
 AI_THINK_TIME = (0.7, 1.3)       # seconds the computer "thinks" before it flicks (min, max)
 AI_PLAYER_INDEX = 1              # in Player vs Computer the computer is Player 2
+
+# ---------------------------------------------------------------------------
+# Step 4: team matches (2v2, 3v3 on one computer)
+# ---------------------------------------------------------------------------
+MAX_TEAM_SIZE = 3                 # pens per team in the biggest team match
+TEAM_TURN_LIMIT_BONUS = 10        # extra turns per team for each extra pen (2v2 = 30, 3v3 = 40)
+TEAM_SUDDEN_DEATH_BONUS = 5       # extra sudden death turns per extra pen
+TEAM_PEN_SPACING = 0.28           # gap between a team's pens, as a fraction of the board height
