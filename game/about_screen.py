@@ -20,7 +20,7 @@ from game.assets import load_image, load_cover_image, load_font
 from game.button import Button
 from game.screen_manager import Screen
 
-BACKGROUND_FILE = "Clash_of_Pens_BG.png"
+BACKGROUND_FILE = "bg_img.png"
 LOGO_FILE = "Logo.webp"
 
 CREDITS_TIME = 20.0          # seconds for the credits to roll through once, then it starts again
