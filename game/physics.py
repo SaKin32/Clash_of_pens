@@ -9,6 +9,7 @@ from common.constants import (
     BOARD_RECT,
     PHYSICS_DAMPING,
     PHYSICS_SUBSTEPS,
+    ANGULAR_DAMPING,
     PEN_LENGTH,
     PEN_WIDTH,
     PEN_MASS,
@@ -48,6 +49,7 @@ class Pen:
 
         self.color = color
         self.hp = stats.hp if stats else PEN_START_HP
+        self.removed = False  # True once the pen has fallen off and left the physics space
 
     @property
     def power(self) -> float:
@@ -75,15 +77,31 @@ class PenWorld:
         self.pens.append(pen)
         return pen
 
+    def remove_pen(self, pen: Pen) -> None:
+        """Take a fallen pen out of the physics space. It stays in self.pens so indexes stay put."""
+        if not pen.removed:
+            self.space.remove(pen.body, pen.shape)
+            pen.removed = True
+
     def step(self, dt: float) -> None:
         """Advance the simulation by dt seconds using small fixed substeps."""
         dt = min(dt, 1 / 30)  # avoid huge jumps after a lag spike
+        h = dt / PHYSICS_SUBSTEPS
+        # The space damping slows sliding AND spin by PHYSICS_DAMPING. Spin should fade more
+        # slowly (ANGULAR_DAMPING), so after each substep we give back the difference.
+        # (Doing this here, not in a Python callback inside pymunk, keeps the game fast.)
+        spin_boost = (ANGULAR_DAMPING / PHYSICS_DAMPING) ** h
         for _ in range(PHYSICS_SUBSTEPS):
-            self.space.step(dt / PHYSICS_SUBSTEPS)
+            self.space.step(h)
+            for pen in self.pens:
+                if not pen.removed:
+                    pen.body.angular_velocity *= spin_boost
 
     def is_settled(self) -> bool:
         """True when every pen has (almost) stopped moving and spinning."""
         for pen in self.pens:
+            if pen.removed:
+                continue
             if pen.body.velocity.length > SETTLE_SPEED:
                 return False
             if abs(pen.body.angular_velocity) > SETTLE_ANGULAR_SPEED:
@@ -93,6 +111,8 @@ class PenWorld:
     def stop_all(self) -> None:
         """Zero out all motion so tiny leftover drift does not continue."""
         for pen in self.pens:
+            if pen.removed:
+                continue
             pen.body.velocity = (0, 0)
             pen.body.angular_velocity = 0         
 
