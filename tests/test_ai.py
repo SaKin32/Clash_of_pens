@@ -111,3 +111,32 @@ def test_ai_takes_a_winning_shot_when_one_exists():
             m.step(DT)
         wins += m.round_winner == 0
     assert wins >= 3
+
+
+def test_shot_grab_point_stays_on_the_pen():
+    m = Match(("pencil", "marker"))
+    pen = m.world.pens[0]
+    for difficulty in DIFFICULTIES:
+        ai = AIPlayer(difficulty, random.Random(2))
+        for _ in range(15):
+            gx, gy = ai.choose_shot(m).grab
+            assert abs(gx) <= pen.length / 2
+            assert abs(gy) <= pen.width / 2
+
+
+def test_easy_always_hits_the_middle():
+    ai = AIPlayer("easy", random.Random(4))
+    assert all(ai.choose_shot(Match()).grab == (0.0, 0.0) for _ in range(20))
+
+
+def test_hard_sometimes_hits_off_centre_to_make_the_pen_spin():
+    """When the opponent is within reach, the smartest flick is often an off-centre one."""
+    off_centre = 0
+    for seed in range(12):
+        m = Match()
+        x, y, w, h = m.board.as_tuple()
+        m.world.pens[0].body.position = (x + w / 2 - 150, y + h / 2 - 60)
+        m.world.pens[1].body.position = (x + w / 2 + 150, y + h / 2 + 40)
+        shot = AIPlayer("hard", random.Random(seed)).choose_shot(m)
+        off_centre += abs(shot.grab[0]) > 5 or abs(shot.grab[1]) > 2
+    assert off_centre >= 1
