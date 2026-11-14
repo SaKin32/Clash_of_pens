@@ -23,9 +23,12 @@ from game import save
 from game import settings
 from game.assets import load_cover_image, load_font
 from game.splash_screen import GROUP_FILE
+from game.badge_button import BadgeButton, outlined_text
 from game.button import Button
+from game.music_icon import MusicIcon, ICON_SIZE
 from game.screen_manager import Screen
 
+RIGHT_MARGIN = 136  # gap between the buttons and the right edge of the window
 BACKGROUND_FILE = "assets/images/title_bg.png"
 
 
@@ -42,43 +45,42 @@ class TitleScreen(Screen):
         self.overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         self.overlay.fill(OVERLAY_COLOR)
 
-        self.new_game_btn = Button("New Game", self._rect(0), self.on_new_game)
-        self.resume_btn = Button(
-            "Resume", self._rect(1), self.on_resume, enabled=self.has_save
+        self.new_game_btn = BadgeButton("New Game", self._rect(0), self.on_new_game)
+        self.resume_btn = BadgeButton(
+           "Resume", self._rect(1), self.on_resume, enabled=self.has_save
         )
-        self.about_btn = Button("About Us", self._rect(2), self.on_about)
-        self.music_btn = Button(
-            self._music_label(), self._rect(3), self.on_toggle_music
-        )
+        self.about_btn = BadgeButton("About Us", self._rect(2), self.on_about)
+        self.quit_btn = Button("Quit", self._rect(3), self.on_quit)
+        self.version_label = self._make_version_label()
+        self.music_icon = MusicIcon((20, SCREEN_HEIGHT - 20 - ICON_SIZE), self.on_toggle_music)
         self.quit_btn = Button("Quit", self._rect(4), self.on_quit)
         self.buttons = [
             self.new_game_btn,
             self.resume_btn,
             self.about_btn,
-            self.music_btn,
-            self.quit_btn,
         ]
 
     @staticmethod
     def _rect(index: int) -> tuple:
         """Return the rect for the button at the given vertical position."""
-        x = (SCREEN_WIDTH - BUTTON_WIDTH) // 2
+        x = SCREEN_WIDTH - BUTTON_WIDTH - RIGHT_MARGIN
         y = 260 + index * (BUTTON_HEIGHT + BUTTON_GAP)
         return (x, y, BUTTON_WIDTH, BUTTON_HEIGHT)
+
+    def _make_version_label(self) -> pygame.Surface:
+        """"Version 0.1.0" as white text with a black border, so it reads on any background."""
+        return outlined_text(self.small_font, f"Version {VERSION}", (255, 255, 255))
 
     @staticmethod
     def _load_background():
         """Load the group photo as the background, or return None if the file is missing."""
         return load_cover_image(GROUP_FILE, (SCREEN_WIDTH, SCREEN_HEIGHT))
-    @staticmethod
-    def _music_label() -> str:
-        return "Music: On" if settings.is_music_on() else "Music: Off"
+
 
     def on_enter(self) -> None:
         """Refresh Resume and Music state whenever this screen becomes active."""
         self.has_save = save.has_save()
         self.resume_btn.enabled = self.has_save
-        self.music_btn.text = self._music_label()
         music.start()
 
     # Button callbacks
@@ -101,7 +103,6 @@ class TitleScreen(Screen):
 
     def on_toggle_music(self) -> None:
         settings.set_music_on(not settings.is_music_on())
-        self.music_btn.text = self._music_label()
         music.refresh()
 
     def on_quit(self) -> None:
@@ -112,6 +113,7 @@ class TitleScreen(Screen):
     def handle_event(self, event: pygame.event.Event) -> None:
         for button in self.buttons:
             button.handle_event(event)
+        self.music_icon.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
         if self.background:
@@ -121,8 +123,9 @@ class TitleScreen(Screen):
 
         for button in self.buttons:
             button.draw(surface)
+        self.music_icon.draw(surface)
 
-        version = self.small_font.render(f"v{VERSION}", True, TEXT_COLOR)
         surface.blit(
-            version, version.get_rect(bottomright=(SCREEN_WIDTH - 16, SCREEN_HEIGHT - 12))
+            self.version_label,
+            self.version_label.get_rect(bottomright=(SCREEN_WIDTH - 20, SCREEN_HEIGHT - 18)),
         )
