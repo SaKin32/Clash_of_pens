@@ -48,3 +48,14 @@ def test_delete_save(save_dir):
 def test_save_leaves_no_temp_file(save_dir):
     save.save_game(Match().to_state())
     assert not os.path.exists(save.save_path() + ".tmp")
+
+
+def test_team_match_can_be_saved_and_resumed(save_dir):
+    keys = ("ball_pen", "gel_pen", "marker", "pencil", "fountain_pen", "highlighter")
+    m = Match(keys, mode="team")
+    assert save.save_game(m.to_state())
+    assert save.has_save()
+    back = Match.from_state(save.load_game())
+    assert back.mode == "team"
+    assert back.team_size == 3
+    assert back.pen_keys == list(keys)
