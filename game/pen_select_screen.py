@@ -64,7 +64,7 @@ class PenSelectScreen(Screen):
     @property
     def _is_last_pick(self) -> bool:
         s = game_setup.setup
-        return s.mode == "pvc" or s.picking == 1
+        return s.picking == s.picks_needed - 1
 
     def on_enter(self) -> None:
         s = game_setup.setup
@@ -73,29 +73,36 @@ class PenSelectScreen(Screen):
 
     def on_back(self) -> None:
         s = game_setup.setup
-        if s.mode == "pvp" and s.picking == 1:
-            s.picking = 0
+        if s.picking > 0:  # go back to the previous pen
+            s.picking -= 1
             self.on_enter()
         elif s.mode == "pvc":
             self.manager.switch("difficulty_select")
+        elif s.mode == "team":
+            self.manager.switch("team_size_select")
         else:
             self.manager.switch("mode_select")
 
     def on_next(self) -> None:
         s = game_setup.setup
         s.pens[s.picking] = self.selected
-        if s.mode == "pvp" and s.picking == 0:
-            s.picking = 1
+        if not self._is_last_pick:
+            s.picking += 1
             self.on_enter()
             return
         self._start_match()
 
     def _start_match(self) -> None:
         s = game_setup.setup
-        pens = list(s.pens)
+        pens = list(s.pens[: 2 * s.team_size])
         if s.mode == "pvc":
             pens[AI_PLAYER_INDEX] = random.choice(PEN_ORDER)  # the computer picks at random
-        match = Match(pens, mode=s.mode, difficulty=s.difficulty if s.mode == "pvc" else None)
+        match = Match(
+            pens,
+            mode=s.mode,
+            difficulty=s.difficulty if s.mode == "pvc" else None,
+            team_size=s.team_size,
+        )
         self.manager.get("match").start(match)
         self.manager.switch("match")
 
@@ -117,13 +124,24 @@ class PenSelectScreen(Screen):
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
         s = game_setup.setup
-        if s.mode == "pvp":
-            title = f"Player {s.picking + 1}: choose your pen"
-            color = PLAYER_COLORS[s.picking]
+        player = s.picking_player
+        if s.mode == "team":
+            slot = s.picking % s.team_size + 1
+            title = f"Player {player + 1}: choose pen {slot} of {s.team_size}"
+            color = PLAYER_COLORS[player]
+        elif s.mode == "pvp":
+            title = f"Player {player + 1}: choose your pen"
+            color = PLAYER_COLORS[player]
         else:
             title, color = "Choose your pen", HEADING_COLOR
         heading = self.heading_font.render(title, True, color)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 70)))
+
+        if s.mode == "team" and s.picking % s.team_size > 0:  # the team picked so far
+            first = player * s.team_size
+            chosen = ", ".join(PENS[k].name for k in s.pens[first:s.picking])
+            line = self.small_font.render(f"Your team so far: {chosen}", True, TEXT_COLOR)
+            surface.blit(line, line.get_rect(center=(SCREEN_WIDTH // 2, 108)))
 
         mouse = pygame.mouse.get_pos()
         for i, key in enumerate(PEN_ORDER):
