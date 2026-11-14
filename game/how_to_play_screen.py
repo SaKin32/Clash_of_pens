@@ -35,6 +35,10 @@ SECTIONS = (
         f"The next draw goes to sudden death: a tiny board and {SUDDEN_DEATH_TURN_LIMIT} turns each.",
         "Still a draw? The pen closer to the middle wins.",
     ]),
+    ("Team Match", [
+        "2v2 or 3v3: on your turn flick any one of your pens. A pen that falls is out.",
+        "A team with no pens left loses the round. At the turn limit, more pens left wins.",
+    ]),
     ("Keys", [
         "ESC: pause menu     SPACE: next round     R: rematch after a match",
     ]),
@@ -64,12 +68,12 @@ class HowToPlayScreen(Screen):
         heading = self.heading_font.render("How to Play", True, HEADING_COLOR)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 70)))
 
-        y = 130
+        y = 116
         for title, lines in SECTIONS:
             surface.blit(self.section_font.render(title, True, HEADING_COLOR), (140, y))
-            y += 36
+            y += 32
             for line in lines:
                 surface.blit(self.font.render(line, True, TEXT_COLOR), (170, y))
-                y += 28
-            y += 12
+                y += 25
+            y += 8
         self.back_btn.draw(surface)
