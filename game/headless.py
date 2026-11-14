@@ -49,7 +49,7 @@ def play_match(
             match.next_round()
         elif match.can_shoot:
             shot = ais[match.current].choose_shot(match)
-            match.shoot(shot.direction, shot.power)
+            match.shoot(shot.direction, shot.power, shot.grab)
         match.step(FRAME)
         frames += 1
 
