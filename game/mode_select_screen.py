@@ -1,4 +1,4 @@
-"""Mode selection screen: Player vs Computer, Player vs Player, Online."""
+"""Mode selection screen: Player vs Computer, Player vs Player, Team Match, Online."""
 
 import pygame
 
@@ -30,11 +30,12 @@ class ModeSelectScreen(Screen):
         self.heading_font = pygame.font.Font(None, FONT_SIZE_HEADING)
         self.small_font = pygame.font.Font(None, FONT_SIZE_SMALL)
 
-        self.music_btn = Button(self._music_label(), self._rect(3), self.on_toggle_music)
+        self.music_btn = Button(self._music_label(), self._rect(4), self.on_toggle_music)
         self.buttons = [
             Button("Player vs Computer", self._rect(0), self.on_pvc),
             Button("Player vs Player", self._rect(1), self.on_pvp),
-            Button("Online (soon)", self._rect(2), self.on_online, enabled=False),
+            Button("Team Match", self._rect(2), self.on_team),
+            Button("Online (soon)", self._rect(3), self.on_online, enabled=False),
             self.music_btn,
         ]
         self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
@@ -47,7 +48,7 @@ class ModeSelectScreen(Screen):
     @staticmethod
     def _rect(index: int) -> tuple:
         x = (SCREEN_WIDTH - MODE_BUTTON_WIDTH) // 2
-        y = 260 + index * (BUTTON_HEIGHT + BUTTON_GAP)
+        y = 230 + index * (BUTTON_HEIGHT + BUTTON_GAP)
         return (x, y, MODE_BUTTON_WIDTH, BUTTON_HEIGHT)
 
     @staticmethod
@@ -65,6 +66,10 @@ class ModeSelectScreen(Screen):
     def on_pvp(self) -> None:
         game_setup.begin("pvp")
         self.manager.switch("pen_select")
+
+    def on_team(self) -> None:
+        game_setup.begin("team")
+        self.manager.switch("team_size_select")
 
     def on_online(self) -> None:
         print("Online selected")  # online play is added in step 5
