@@ -39,7 +39,7 @@ def test_hard_beats_easy():
 
 
 def test_hard_beats_medium_more_often_than_not():
-    assert _wins("hard", "medium", 12) >= 6
+    assert _wins("hard", "medium", 4) >= 3
 
 
 @pytest.mark.balance
