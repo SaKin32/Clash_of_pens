@@ -14,6 +14,7 @@ from game.how_to_play_screen import HowToPlayScreen
 from game.match_screen import MatchScreen
 from game.mode_select_screen import ModeSelectScreen
 from game.pen_select_screen import PenSelectScreen
+from game.team_size_screen import TeamSizeScreen
 from game.screen_manager import ScreenManager
 from game.title_screen import TitleScreen
 
@@ -30,6 +31,7 @@ def main():
     manager.register("mode_select", ModeSelectScreen(manager))
     manager.register("about", AboutScreen(manager))
     manager.register("difficulty_select", DifficultyScreen(manager))
+    manager.register("team_size_select", TeamSizeScreen(manager))
     manager.register("pen_select", PenSelectScreen(manager))
     manager.register("how_to_play", HowToPlayScreen(manager))
     manager.register("match", MatchScreen(manager))
