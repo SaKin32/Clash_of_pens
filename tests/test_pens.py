@@ -32,3 +32,18 @@ def test_pens_are_not_clones():
 
 def test_unknown_key_falls_back_to_default():
     assert get_pen("does_not_exist").key == DEFAULT_PEN_KEY
+
+
+
+def test_every_pen_has_real_life_facts():
+    from common.pen import PEN_FACTS, get_facts
+    assert set(PEN_FACTS) == set(PENS)
+    labels = [tuple(label for label, _ in PEN_FACTS[key]) for key in PEN_ORDER]
+    assert len(set(labels)) == 1  # same labels for every pen, so the screen lines up
+    assert all(value for key in PEN_ORDER for _, value in PEN_FACTS[key])
+    assert get_facts("nope") == PEN_FACTS[DEFAULT_PEN_KEY]
+
+
+def test_old_pencil_key_becomes_the_metal_pen():
+    assert get_pen("pencil").key == "metal_pen"
+
