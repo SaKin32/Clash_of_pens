@@ -16,8 +16,8 @@ from game.match import Match
 from game.physics import PenWorld
 
 DT = 1 / 60
-PENS_2V2 = ("ball_pen", "gel_pen", "marker", "pencil")          # team 0 = first two, team 1 = last two
-PENS_3V3 = ("ball_pen", "gel_pen", "marker", "pencil", "fountain_pen", "highlighter")
+PENS_2V2 = ("ball_pen", "gel_pen", "marker", "metal_pen")          # team 0 = first two, team 1 = last two
+PENS_3V3 = ("ball_pen", "gel_pen", "marker", "metal_pen", "fountain_pen", "highlighter")
 
 
 def settle(m, frames=200):
@@ -90,7 +90,7 @@ def test_teams_face_each_other():
 
 
 def test_wrong_number_of_pen_keys_is_fixed_up():
-    m = Match(("pencil",) * 3, team_size=2)
+    m = Match(("metal_pen",) * 3, team_size=2)
     assert len(m.pen_keys) == 4
 
 
@@ -268,14 +268,14 @@ def test_team_state_round_trip():
 
 
 def test_old_save_without_team_size_loads_as_one_v_one():
-    old = {"mode": "pvp", "pens": ["pencil", "marker"], "score": [1, 0], "round": 2}
+    old = {"mode": "pvp", "pens": ["metal_pen", "marker"], "score": [1, 0], "round": 2}
     m = Match.from_state(old)
     assert m.team_size == 1
-    assert m.pen_keys == ["pencil", "marker"]
+    assert m.pen_keys == ["metal_pen", "marker"]
 
 
 @pytest.mark.parametrize("bad", [
-    {"team_size": 2, "pens": ["pencil", "marker"]},          # too few pens for 2v2
+    {"team_size": 2, "pens": ["metal_pen", "marker"]},          # too few pens for 2v2
     {"team_size": 9, "pens": 5},
     {"team_size": "x", "pens": None},
     {"team_size": -4},
