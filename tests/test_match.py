@@ -49,7 +49,7 @@ def test_new_match_starts_clean():
 
 
 def test_pens_use_their_own_stats():
-    m = Match(("pencil", "marker"))
+    m = Match(("metal_pen", "marker"))
     a, b = m.world.pens
     assert a.length != b.length
     assert a.body.mass != b.body.mass or a.width != b.width
