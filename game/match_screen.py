@@ -54,6 +54,7 @@ from common.pen import get_pen
 from game import save, settings
 from game.ai import AIPlayer
 from game.assets import load_image, load_font
+from game.match_art import pen_sprite, table_texture
 from game.button import Button
 from game.match import Match, PLAYER_COLORS
 from game.physics import Pen, PenWorld
@@ -289,32 +290,20 @@ class MatchScreen(Screen):
             self._draw_aim(surface)
         self._draw_power_bar(surface)
         self._draw_warning_text(surface)
-        self._draw_score(surface)
         self._draw_timer(surface)
-        self._draw_pen_names(surface)
         self._draw_round_over(surface)
-
-        hint = self.font.render(
-            "Grab your pen anywhere, pull back, release to flick    ESC: pause",
-            True,
-            TEXT_COLOR,
-        )
-        surface.blit(hint, hint.get_rect(midbottom=(SCREEN_WIDTH // 2, SCREEN_HEIGHT - 10)))
 
         if self.paused:
             self._draw_pause(surface)
 
     def _draw_board(self, surface: pygame.Surface) -> None:
         m = self.match
-        # Dark table area under the board so shrinking is visible
-        full = pygame.Rect(BOARD_RECT)
-        pygame.draw.rect(surface, (22, 25, 33), full)
-        pygame.draw.rect(surface, (45, 50, 62), full, width=2)
-
         board = pygame.Rect(m.board.as_tuple())
-        texture = load_image("board.png")
-        if texture and board.width > 0 and board.height > 0:
-            surface.blit(pygame.transform.scale(texture, board.size), board)
+        table = table_texture()
+        if table is not None and board.width > 0 and board.height > 0:
+            # Show the part of the table that is still inside the (shrinking) board
+            area = board.move(-BOARD_RECT[0], -BOARD_RECT[1]).clip(table.get_rect())
+            surface.blit(table, (BOARD_RECT[0] + area.x, BOARD_RECT[1] + area.y), area)
         else:
             pygame.draw.rect(surface, BOARD_COLOR, board)
         pygame.draw.rect(surface, BOARD_BORDER_COLOR, board, width=6)
@@ -368,10 +357,10 @@ class MatchScreen(Screen):
                 corners = [c + offset for c in corners]
 
         key = pen.stats.key if pen.stats else f"p{index + 1}"
-        image = load_image(f"pen_{key}.png", (pen.length, pen.width))
+        image = pen_sprite(key, pen.length, pen.color)
         if image:
             if scale < 1.0:
-                size = (max(1, int(pen.length * scale)), max(1, int(pen.width * scale)))
+                size = (max(1, int(image.get_width() * scale)), max(1, int(image.get_height() * scale)))
                 image = pygame.transform.smoothscale(image, size)
             # pymunk angles turn clockwise on screen (y points down), pygame rotates counter-clockwise
             image = pygame.transform.rotate(image, -math.degrees(pen.body.angle))
@@ -391,19 +380,6 @@ class MatchScreen(Screen):
                 pos = m.world.pens[i].body.position
                 thick = 4 if (self.dragging and i == self.drag_pen) else 2
                 pygame.draw.circle(surface, TURN_RING_COLOR, (int(pos.x), int(pos.y)), 18, width=thick)
-        label = f"{self._player_label(m.current)}'s turn"
-        if self.ai is not None and m.current == AI_PLAYER_INDEX and m.can_shoot:
-            label = "Computer is thinking..."
-        text = self.big_font.render(label, True, PLAYER_COLORS[m.current])
-        surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, 60)))
-
-        counts = self.font.render(
-            f"Turn {m.turns_taken[m.current] + 1} of {m.turn_limit}"
-            f"    Shots  P1: {m.shots[0]}   P2: {m.shots[1]}",
-            True,
-            TEXT_COLOR,
-        )
-        surface.blit(counts, counts.get_rect(center=(SCREEN_WIDTH // 2, 90)))
 
     def _draw_pen_names(self, surface: pygame.Surface) -> None:
         m = self.match
@@ -501,11 +477,8 @@ class MatchScreen(Screen):
         m = self.match
         if m.round_over:
             return
-        seconds = max(0, int(m.turn_time_left) + 1)
         urgent = m.turn_time_left <= TIMER_WARNING_TIME
         color = WARNING_COLOR if urgent else TEXT_COLOR
-        text = self.big_font.render(f"{seconds}", True, color)
-        surface.blit(text, text.get_rect(center=(SCREEN_WIDTH - 90, 100)))
 
         # Thin bar under the power bar showing the time left
         bar = pygame.Rect(TIMER_BAR_RECT)
