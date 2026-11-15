@@ -24,7 +24,7 @@ def _wins(strong, weak, matches):
 
 def test_a_match_always_finishes_with_a_valid_result():
     for seed in range(4):
-        r = play_match(("marker", "pencil"), ("medium", "medium"), seed=seed)
+        r = play_match(("marker", "metal_pen"), ("medium", "medium"), seed=seed)
         assert r.winner in (0, 1)
         assert max(r.scores) == 2
         assert r.rounds >= 2
