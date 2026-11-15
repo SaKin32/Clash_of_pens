@@ -71,7 +71,7 @@ class ModeSelectScreen(Screen):
     # Mode callbacks
     def on_pvc(self) -> None:
         game_setup.begin("pvc")
-        self.manager.switch("difficulty_select")
+        self.manager.switch("pen_select")  # Easy / Medium / Hard are picked on the pen screen
 
     def on_pvp_menu(self) -> None:
         self.view = "pvp"
