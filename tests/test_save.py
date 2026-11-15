@@ -11,11 +11,11 @@ def test_no_save_at_first(save_dir):
 
 
 def test_save_and_load_a_match(save_dir):
-    m = Match(("pencil", "gel_pen"), mode="pvc", difficulty="easy")
+    m = Match(("metal_pen", "gel_pen"), mode="pvc", difficulty="easy")
     assert save.save_game(m.to_state())
     assert save.has_save()
     back = Match.from_state(save.load_game())
-    assert back.pen_keys == ["pencil", "gel_pen"]
+    assert back.pen_keys == ["metal_pen", "gel_pen"]
     assert back.difficulty == "easy"
 
 
@@ -51,7 +51,7 @@ def test_save_leaves_no_temp_file(save_dir):
 
 
 def test_team_match_can_be_saved_and_resumed(save_dir):
-    keys = ("ball_pen", "gel_pen", "marker", "pencil", "fountain_pen", "highlighter")
+    keys = ("ball_pen", "gel_pen", "marker", "metal_pen", "fountain_pen", "highlighter")
     m = Match(keys, mode="team")
     assert save.save_game(m.to_state())
     assert save.has_save()
