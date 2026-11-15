@@ -13,7 +13,7 @@ all read the same data. To rebalance the game, change the numbers here.
 """
 
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 
 @dataclass(frozen=True)
@@ -64,13 +64,13 @@ PENS: Dict[str, PenStats] = {
         elasticity=0.48, friction=0.5, power=0.95, hp=120,
         color=(80, 180, 110),
     ),
-    "pencil": PenStats(
-        key="pencil",
-        name="Pencil",
-        description="Long, thin and light. Big reach.",
-        mass=2.55, length=192, width=21,
-        elasticity=0.55, friction=0.35, power=1.17, hp=80,
-        color=(235, 190, 70),
+    "metal_pen": PenStats(
+        key="metal_pen",
+        name="Metal Pen",
+        description="Steel barrel with lively rebounds.",
+        mass=3.05, length=175, width=22,
+        elasticity=0.67, friction=0.33, power=1.02, hp=105,
+        color=(160, 172, 190),
     ),
     "highlighter": PenStats(
         key="highlighter",
@@ -85,7 +85,64 @@ PENS: Dict[str, PenStats] = {
 PEN_ORDER: List[str] = list(PENS.keys())
 DEFAULT_PEN_KEY = "ball_pen"
 
+# Old pen keys from earlier versions, so old save files still load the right pen.
+LEGACY_KEYS: Dict[str, str] = {"pencil": "metal_pen"}
+
 
 def get_pen(key: str) -> PenStats:
     """Return the stats for a pen key. Unknown keys fall back to the default pen."""
+    key = LEGACY_KEYS.get(key, key)
     return PENS.get(key, PENS[DEFAULT_PEN_KEY])
+
+
+# What the pen is like in real life, shown on the pen select screen (approximate values).
+# Each entry is (label, value). Keep the labels the same for every pen so the screen lines up.
+PEN_FACTS: Dict[str, Tuple[Tuple[str, str], ...]] = {
+    "ball_pen": (
+        ("Made of", "Light plastic barrel"),
+        ("Weight", "about 5 g"),
+        ("Length", "about 15 cm"),
+        ("Ink", "Thick oil-based ink"),
+        ("Strength", "Tough enough for daily use"),
+    ),
+    "gel_pen": (
+        ("Made of", "Plastic with a rubber grip"),
+        ("Weight", "about 12 g"),
+        ("Length", "about 14 cm"),
+        ("Ink", "Smooth water-based gel ink"),
+        ("Strength", "Light and quick, but not heavy"),
+    ),
+    "fountain_pen": (
+        ("Made of", "Metal and resin body"),
+        ("Weight", "about 28 g"),
+        ("Length", "about 14 cm"),
+        ("Ink", "Liquid ink through a steel nib"),
+        ("Strength", "Heavy and balanced, slow to start"),
+    ),
+    "marker": (
+        ("Made of", "Thick plastic barrel"),
+        ("Weight", "about 22 g"),
+        ("Length", "about 13 cm"),
+        ("Ink", "Alcohol ink, felt tip"),
+        ("Strength", "Short, wide and very hard to push"),
+    ),
+    "metal_pen": (
+        ("Made of", "Solid steel barrel"),
+        ("Weight", "about 26 g"),
+        ("Length", "about 14 cm"),
+        ("Ink", "Ball tip with a metal refill"),
+        ("Strength", "Hard and springy, rebounds well"),
+    ),
+    "highlighter": (
+        ("Made of", "Wide plastic body"),
+        ("Weight", "about 14 g"),
+        ("Length", "about 12 cm"),
+        ("Ink", "Bright ink, flat chisel tip"),
+        ("Strength", "Wide body with a steady grip"),
+    ),
+}
+
+
+def get_facts(key: str) -> Tuple[Tuple[str, str], ...]:
+    """Real-life facts for a pen key (same fallback rules as get_pen)."""
+    return PEN_FACTS[get_pen(key).key]
