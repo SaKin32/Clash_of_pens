@@ -11,13 +11,13 @@ from common.constants import (
     FONT_SIZE_HEADING,
     FONT_SIZE_BUTTON,
     FONT_SIZE_SMALL,
-    BACK_BUTTON_RECT,
     ROUNDS_TO_WIN,
     ROUND_TURN_LIMIT,
     TURN_TIME_LIMIT,
     SUDDEN_DEATH_TURN_LIMIT,
 )
-from game.button import Button
+from game.badge_button import outlined_text
+from game.common_ui import make_back_button, make_music_icon
 from game.screen_manager import Screen
 
 SECTIONS = (
@@ -52,7 +52,8 @@ class HowToPlayScreen(Screen):
         self.heading_font = load_font(FONT_SIZE_HEADING)
         self.section_font = load_font(FONT_SIZE_BUTTON)
         self.font = load_font(FONT_SIZE_SMALL + 4)
-        self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
+        self.back_btn = make_back_button(self.on_back)
+        self.music_icon = make_music_icon()
         self.return_to = "mode_select"  # whoever opens this screen sets where Back goes
 
     def on_back(self) -> None:
@@ -63,18 +64,20 @@ class HowToPlayScreen(Screen):
             self.on_back()
             return
         self.back_btn.handle_event(event)
+        self.music_icon.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        heading = self.heading_font.render("How to Play", True, HEADING_COLOR)
+        heading = outlined_text(self.heading_font, "How to Play", HEADING_COLOR, outline=3)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 70)))
 
         y = 116
         for title, lines in SECTIONS:
-            surface.blit(self.section_font.render(title, True, HEADING_COLOR), (140, y))
-            y += 32
+            surface.blit(outlined_text(self.section_font, title, HEADING_COLOR, outline=2), (140, y))
+            y += 36
             for line in lines:
                 surface.blit(self.font.render(line, True, TEXT_COLOR), (170, y))
                 y += 25
             y += 8
         self.back_btn.draw(surface)
+        self.music_icon.draw(surface)
