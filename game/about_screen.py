@@ -14,14 +14,15 @@ from common.constants import (
     FONT_SIZE_TITLE,
     FONT_SIZE_BUTTON,
     FONT_SIZE_SMALL,
-    BACK_BUTTON_RECT,
 )
 from game.assets import load_image, load_cover_image, load_font
-from game.button import Button
+from game.icon_button import IconButton
 from game.screen_manager import Screen
 
 BACKGROUND_FILE = "bg_img.png"
 LOGO_FILE = "Logo.webp"
+BACK_ICON_FILE = "back.png"
+BACK_ICON_POSITION = (20, 20)  # top-left corner of the window, same as on the Select Mode screen
 
 CREDITS_TIME = 20.0          # seconds for the credits to roll through once, then it starts again
 FADE_HEIGHT = 130            # pixels at the top and bottom where the text fades out
@@ -39,7 +40,7 @@ TEAM_MEMBERS = [
     ("Luckman Rafique", "20255103041"),
     ("Md Taimur Rahman", "20255103046"),
     ("Md Showkotul Islam", "20255103058"),
-    ("Md Shimul Islam", "20255103060"),
+    ("Shimul Islam", "20255103060"),
     ("Md Siam Khan", "20255103069"),
     ("Tanvir Ahmed", "20255103081"),
 ]
@@ -93,7 +94,7 @@ class AboutScreen(Screen):
         self.title_font = load_font(FONT_SIZE_TITLE)
         self.name_font = load_font(FONT_SIZE_BUTTON)
         self.small_font = load_font(FONT_SIZE_SMALL)
-        self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
+        self.back_btn = IconButton(BACK_ICON_FILE, BACK_ICON_POSITION, self.on_back)
 
         self.background = None   # built the first time the screen opens
         self.credits = self._build_credits()
@@ -198,12 +199,4 @@ class AboutScreen(Screen):
         self.layer.blit(self.fade_mask, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
         surface.blit(self.layer, (0, 0))
 
-        self.back_btn.draw(surface)
-        self._draw_back_arrow(surface)
-
-    def _draw_back_arrow(self, surface: pygame.Surface) -> None:
-        """Small left arrow on the Back button."""
-        rect = self.back_btn.rect
-        cx, cy = rect.left + 26, rect.centery
-        points = [(cx + 8, cy - 11), (cx - 8, cy), (cx + 8, cy + 11)]
-        pygame.draw.polygon(surface, TEXT_COLOR, points)
+        self.back_btn.draw(surface) 
