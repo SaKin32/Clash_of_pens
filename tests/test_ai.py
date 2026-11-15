@@ -26,7 +26,7 @@ def test_harder_levels_make_smaller_aiming_errors():
 
 
 @pytest.mark.parametrize("difficulty", DIFFICULTIES)
-@pytest.mark.parametrize("pens", [("ball_pen", "marker"), ("pencil", "gel_pen")])
+@pytest.mark.parametrize("pens", [("ball_pen", "marker"), ("metal_pen", "gel_pen")])
 def test_shot_is_valid_for_every_difficulty(difficulty, pens):
     ai = AIPlayer(difficulty, random.Random(1))
     m = Match(pens)
@@ -114,7 +114,7 @@ def test_ai_takes_a_winning_shot_when_one_exists():
 
 
 def test_shot_grab_point_stays_on_the_pen():
-    m = Match(("pencil", "marker"))
+    m = Match(("metal_pen", "marker"))
     pen = m.world.pens[0]
     for difficulty in DIFFICULTIES:
         ai = AIPlayer(difficulty, random.Random(2))
