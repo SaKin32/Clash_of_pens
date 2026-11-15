@@ -13,11 +13,11 @@ from common.constants import (
     BUTTON_HEIGHT,
     BUTTON_GAP,
     MODE_BUTTON_WIDTH,
-    BACK_BUTTON_RECT,
 )
 from game import setup as game_setup
 from game.ai import PROFILES
-from game.button import Button
+from game.badge_button import BadgeButton, outlined_text
+from game.common_ui import make_back_button, make_music_icon
 from game.screen_manager import Screen
 
 DESCRIPTIONS = {
@@ -33,10 +33,11 @@ class DifficultyScreen(Screen):
         self.heading_font = load_font(FONT_SIZE_HEADING)
         self.small_font = load_font(FONT_SIZE_SMALL)
         self.buttons = [
-            Button(PROFILES[key].name, self._rect(i), lambda k=key: self.choose(k))
+            BadgeButton(PROFILES[key].name, self._rect(i), lambda k=key: self.choose(k))
             for i, key in enumerate(PROFILES)
         ]
-        self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
+        self.back_btn = make_back_button(self.on_back)
+        self.music_icon = make_music_icon()
 
     @staticmethod
     def _rect(index: int) -> tuple:
@@ -59,13 +60,15 @@ class DifficultyScreen(Screen):
         for button in self.buttons:
             button.handle_event(event)
         self.back_btn.handle_event(event)
+        self.music_icon.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        heading = self.heading_font.render("Select Difficulty", True, HEADING_COLOR)
+        heading = outlined_text(self.heading_font, "Select Difficulty", HEADING_COLOR, outline=3)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 160)))
         for key, button in zip(PROFILES, self.buttons):
             button.draw(surface)
             note = self.small_font.render(DESCRIPTIONS[key], True, TEXT_COLOR)
             surface.blit(note, note.get_rect(midtop=(SCREEN_WIDTH // 2, button.rect.bottom + 6)))
         self.back_btn.draw(surface)
+        self.music_icon.draw(surface)
