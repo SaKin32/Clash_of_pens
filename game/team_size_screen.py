@@ -16,7 +16,8 @@ from common.constants import (
     BACK_BUTTON_RECT,
 )
 from game import setup as game_setup
-from game.button import Button
+from game.badge_button import BadgeButton, outlined_text
+from game.common_ui import make_back_button, make_music_icon
 from game.screen_manager import Screen
 
 SIZES = (
@@ -31,10 +32,11 @@ class TeamSizeScreen(Screen):
         self.heading_font = load_font(FONT_SIZE_HEADING)
         self.small_font = load_font(FONT_SIZE_SMALL)
         self.buttons = [
-            Button(label, self._rect(i), lambda n=size: self.choose(n))
+            BadgeButton(label, self._rect(i), lambda n=size: self.choose(n))
             for i, (size, label, _) in enumerate(SIZES)
         ]
-        self.back_btn = Button("Back", BACK_BUTTON_RECT, self.on_back)
+        self.back_btn = make_back_button(self.on_back)
+        self.music_icon = make_music_icon()
 
     @staticmethod
     def _rect(index: int) -> tuple:
@@ -56,13 +58,15 @@ class TeamSizeScreen(Screen):
         for button in self.buttons:
             button.handle_event(event)
         self.back_btn.handle_event(event)
+        self.music_icon.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
         surface.fill(BG_COLOR)
-        heading = self.heading_font.render("Team Match", True, HEADING_COLOR)
+        heading = outlined_text(self.heading_font, "Team Match", HEADING_COLOR, outline=3)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 160)))
         for (_, _, note), button in zip(SIZES, self.buttons):
             button.draw(surface)
             text = self.small_font.render(note, True, TEXT_COLOR)
             surface.blit(text, text.get_rect(midtop=(SCREEN_WIDTH // 2, button.rect.bottom + 6)))
         self.back_btn.draw(surface)
+        self.music_icon.draw(surface)
