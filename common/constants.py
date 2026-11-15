@@ -46,7 +46,7 @@ SAVE_VERSION = 1
 SETTINGS_FILE_NAME = "settings.json"
 
 # Board (top-down playing surface)
-BOARD_RECT = (190, 110, 900, 500)  # x, y, width, height
+BOARD_RECT = (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)  # x, y, width, height (the table fills the whole window)
 BOARD_COLOR = (196, 164, 120)
 BOARD_BORDER_COLOR = (110, 80, 50)
 
