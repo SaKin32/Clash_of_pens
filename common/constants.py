@@ -51,8 +51,8 @@ BOARD_COLOR = (196, 164, 120)
 BOARD_BORDER_COLOR = (110, 80, 50)
 
 # Physics
-PHYSICS_DAMPING = 0.0005  # fraction of velocity kept after 1 second (surface friction)
-PHYSICS_SUBSTEPS = 4
+PHYSICS_DAMPING = 0.00002  # fraction of velocity kept after 1 second (table friction). Lower = more friction, pens slide a shorter way
+PHYSICS_SUBSTEPS = 8  # more substeps = pens never sink into each other, even when spinning fast
 
 # Placeholder pen (real per-pen stats come in step 3)
 PEN_LENGTH = 170
@@ -66,15 +66,17 @@ PEN_COLOR_P2 = (220, 90, 80)
 PEN_OUTLINE_COLOR = (20, 20, 25)
 
 # Shooting (drag to aim)
-GRAB_MARGIN = 20  # extra pixels around a pen where a click still grabs it
+GRAB_MARGIN = 28  # extra pixels around a pen where a click still grabs it (so the head and tail are easy to grab)
 MAX_PULL_DISTANCE = 160  # pixels of drag that give full power
 MIN_PULL_DISTANCE = 15  # shorter drags are cancelled
 MAX_SHOT_SPEED = 1200  # launch speed at full power (pixels per second)
 SETTLE_SPEED = 8.0  # below this speed a pen counts as stopped
-SETTLE_ANGULAR_SPEED = 0.2  # below this spin a pen counts as stopped
+SETTLE_ANGULAR_SPEED = 0.4  # below this spin a pen counts as stopped
 POWER_CURVE = 1.5  # 1.0 = linear. Higher = gentler light flicks, stronger full pulls
-MAX_SPIN = 24.0  # cap on spin (radians per second) from an off-center hit
-ANGULAR_DAMPING = 0.02  # fraction of spin kept after 1 second. Spin fades slower than sliding, so a hit near the end turns the pen up to about one full turn
+MAX_SPIN = 11.0  # cap on spin (radians per second) from an off-center hit
+FLICK_SPIN_BOOST = 0.40  # how fast a flick at the pen end spins it (lower = slower spin). Full power at the very end: about 0.5 turn, never more than 1 turn
+ANGULAR_DAMPING = 0.7  # fraction of spin kept after 1 second from the smooth slow-down. Keep it high: the main slow-down is SPIN_FRICTION below
+SPIN_FRICTION = 15.0  # how fast spin is lost (radians per second, every second). Higher = the pen stops spinning sooner. The strongest spin lasts about 0.6 second
 
 # Aiming visuals
 AIM_LINE_COLOR = (255, 255, 255)
@@ -114,7 +116,7 @@ TIMER_BAR_RECT = (490, 668, 300, 10)
 # Round length and sudden death
 ROUND_TURN_LIMIT = 20            # turns per player; a round with no fall is a draw after this
 SUDDEN_DEATH_ENABLED = True      # False: a second draw is decided by edge distance right away
-SUDDEN_DEATH_BOARD_SIZE = (480, 280)  # sudden death is played on this small centred board
+SUDDEN_DEATH_BOARD_SIZE = (720, 420)  # sudden death is played on this small centred board
 SUDDEN_DEATH_TURN_LIMIT = 10     # turns per player in sudden death; still no fall = edge distance
 
 # Pause menu
@@ -131,8 +133,9 @@ STAT_BAR_FILL_COLOR = (120, 190, 255)
 # AI
 AI_SIM_FPS = 60                  # frames per second used when the AI tries a shot in its head
 AI_SIM_MAX_FRAMES = 150          # longest a tried shot is simulated (2.5 s of game time)
+AI_MAX_POWER = 1.0               # full human pull allows decisive knockout shots when needed
 AI_MIN_POWER = 0.12              # AI never flicks softer than this (fraction of full power)
-AI_THINK_TIME = (0.7, 1.3)       # seconds the computer "thinks" before it flicks (min, max)
+AI_THINK_TIME = (1.2, 2.0)       # seconds the computer "thinks" before it flicks (min, max)
 AI_PLAYER_INDEX = 1              # in Player vs Computer the computer is Player 2
 
 # ---------------------------------------------------------------------------
