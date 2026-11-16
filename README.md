@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/images/Clash_of_pen_logo.png" alt="Clash of Pens Logo" width="380" />
+  <img src="assets/images/logo.png" alt="Clash of Pens Logo" width="380" />
 
   # Clash of Pens - The Definitive Technical Manual and Player Guide
 
