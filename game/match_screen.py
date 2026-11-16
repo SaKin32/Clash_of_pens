@@ -31,7 +31,6 @@ from common.constants import (
     POWER_CURVE,
     AIM_LINE_COLOR,
     PULL_LINE_COLOR,
-    TURN_RING_COLOR,
     POWER_BAR_RECT,
     POWER_BAR_BG_COLOR,
     BOARD_RECT,
@@ -237,7 +236,13 @@ class MatchScreen(Screen):
             pen_index = self._grabbed(event.pos)
             if pen_index is not None:
                 self.drag_pen = pen_index
-                self.grab_local = m.world.pens[pen_index].body.world_to_local(event.pos)
+                pen = m.world.pens[pen_index]
+                local = pen.body.world_to_local(event.pos)
+                # A click just past the head or tail still counts as the very end of the pen
+                self.grab_local = pymunk.Vec2d(
+                    max(-pen.length / 2, min(pen.length / 2, local.x)),
+                    max(-pen.width / 2, min(pen.width / 2, local.y)),
+                )
                 self.dragging = True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             if self.dragging:
@@ -284,8 +289,8 @@ class MatchScreen(Screen):
         for i, pen in enumerate(m.world.pens):
             self._draw_pen(surface, i, pen)
 
-        if not m.round_over:
-            self._draw_turn_indicator(surface)
+        self._draw_impacts(surface)
+
         if self.dragging:
             self._draw_aim(surface)
         self._draw_power_bar(surface)
@@ -357,7 +362,7 @@ class MatchScreen(Screen):
                 corners = [c + offset for c in corners]
 
         key = pen.stats.key if pen.stats else f"p{index + 1}"
-        image = pen_sprite(key, pen.length, pen.color)
+        image = pen_sprite(key, pen.length, pen.width)
         if image:
             if scale < 1.0:
                 size = (max(1, int(image.get_width() * scale)), max(1, int(image.get_height() * scale)))
@@ -373,13 +378,19 @@ class MatchScreen(Screen):
         pygame.draw.polygon(surface, body_color, corners)
         pygame.draw.polygon(surface, outline_color, corners, width=4)
 
-    def _draw_turn_indicator(self, surface: pygame.Surface) -> None:
-        m = self.match
-        if m.can_shoot and self._human_turn:
-            for i in m.alive_indexes(m.current):
-                pos = m.world.pens[i].body.position
-                thick = 4 if (self.dragging and i == self.drag_pen) else 2
-                pygame.draw.circle(surface, TURN_RING_COLOR, (int(pos.x), int(pos.y)), 18, width=thick)
+    def _draw_impacts(self, surface: pygame.Surface) -> None:
+        impacts = getattr(self.match.world, "impacts", None)
+        if not impacts:
+            return
+        for imp in impacts:
+            ratio = max(0.0, min(1.0, imp["life"] / imp["max_life"]))
+            radius = int(14 * (1.0 - ratio) + 4)
+            alpha = int(220 * ratio)
+            pos = (int(imp["pos"].x), int(imp["pos"].y))
+            flash = pygame.Surface((radius * 2 + 4, radius * 2 + 4), pygame.SRCALPHA)
+            pygame.draw.circle(flash, (255, 235, 170, alpha), (radius + 2, radius + 2), radius, width=2)
+            pygame.draw.circle(flash, (255, 255, 255, int(alpha * 0.7)), (radius + 2, radius + 2), max(1, radius // 2))
+            surface.blit(flash, (pos[0] - radius - 2, pos[1] - radius - 2))
 
     def _draw_pen_names(self, surface: pygame.Surface) -> None:
         m = self.match
