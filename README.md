@@ -1,10 +1,14 @@
-# Clash of Pens - The Definitive Technical Manual and Player Guide
+<div align="center">
+  <img src="assets/images/Clash_of_pen_logo.png" alt="Clash of Pens Logo" width="380" />
 
-[![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
-[![Engine](https://img.shields.io/badge/engine-pygame--ce-informational.svg)](https://pyga.me/)
-[![Physics](https://img.shields.io/badge/physics-pymunk%206.x-orange.svg)](http://www.pymunk.org/)
-[![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
-[![Build Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
+  # Clash of Pens - The Definitive Technical Manual and Player Guide
+
+  [![Python Version](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+  [![Engine](https://img.shields.io/badge/engine-pygame--ce-informational.svg)](https://pyga.me/)
+  [![Physics](https://img.shields.io/badge/physics-pymunk%206.x-orange.svg)](http://www.pymunk.org/)
+  [![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)]()
+  [![Build Status](https://img.shields.io/badge/tests-passing-brightgreen.svg)]()
+</div>
 
 ---
 
