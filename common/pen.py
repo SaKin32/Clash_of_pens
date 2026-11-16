@@ -5,7 +5,10 @@ all read the same data. To rebalance the game, change the numbers here.
 
     mass        heavier pens push lighter pens around in a collision
     length      pen length in pixels (longer = bigger target and reach)
-    width       pen thickness in pixels
+    width       pen thickness in pixels. Keep length/width close to the shape of the
+                pen picture so the picture is never stretched and always fits its hitbox.
+                Gel, Fountain and Metal pens share the same length on purpose. The Ball Pen
+                is a little longer and thicker because its picture is very thin.
     elasticity  bounciness of a hit (0 = dead, 1 = perfect bounce)
     friction    grip between two touching pens
     power       multiplier on the shot speed (1.0 = standard flick)
@@ -36,48 +39,48 @@ PENS: Dict[str, PenStats] = {
         key="ball_pen",
         name="Ball Pen",
         description="Balanced all-rounder.",
-        mass=3.0, length=170, width=26,
-        elasticity=0.6, friction=0.4, power=1.0, hp=100,
+        mass=3.0, length=255, width=20,
+        elasticity=0.9, friction=0.24, power=1.0, hp=100,
         color=(70, 130, 220),
     ),
     "gel_pen": PenStats(
         key="gel_pen",
         name="Gel Pen",
         description="Light and fast, bounces off hits.",
-        mass=2.6, length=165, width=24,
-        elasticity=0.7, friction=0.3, power=1.2, hp=90,
+        mass=2.6, length=255, width=23,
+        elasticity=0.95, friction=0.18, power=1.2, hp=90,
         color=(150, 100, 220),
     ),
     "fountain_pen": PenStats(
         key="fountain_pen",
         name="Fountain Pen",
         description="Long and heavy, slower to launch.",
-        mass=3.3, length=180, width=24,
-        elasticity=0.5, friction=0.45, power=0.9, hp=110,
+        mass=3.3, length=255, width=23,
+        elasticity=0.8, friction=0.27, power=0.9, hp=110,
         color=(200, 170, 60),
     ),
     "marker": PenStats(
         key="marker",
         name="Marker",
-        description="Short and very heavy. Hard to push.",
-        mass=3.4, length=140, width=37,
-        elasticity=0.48, friction=0.5, power=0.95, hp=120,
+        description="Thick and very heavy. Hard to push.",
+        mass=3.4, length=240, width=29,
+        elasticity=0.78, friction=0.3, power=0.95, hp=120,
         color=(80, 180, 110),
     ),
     "metal_pen": PenStats(
         key="metal_pen",
         name="Metal Pen",
         description="Steel barrel with lively rebounds.",
-        mass=3.05, length=175, width=22,
-        elasticity=0.67, friction=0.33, power=1.02, hp=105,
+        mass=3.05, length=255, width=28,
+        elasticity=0.93, friction=0.2, power=1.02, hp=105,
         color=(160, 172, 190),
     ),
     "highlighter": PenStats(
         key="highlighter",
         name="Highlighter",
         description="Wide body with steady grip.",
-        mass=3.2, length=155, width=33,
-        elasticity=0.55, friction=0.45, power=1.0, hp=100,
+        mass=3.2, length=200, width=54,
+        elasticity=0.85, friction=0.27, power=1.0, hp=100,
         color=(230, 120, 190),
     ),
 }
