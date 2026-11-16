@@ -84,8 +84,8 @@ def test_pens_start_inside_the_board_and_apart(keys, sudden_death):
 
 def test_teams_face_each_other():
     m = Match(PENS_2V2)
-    assert all(math.cos(m.world.pens[i].body.angle) > 0 for i in (0, 1))
-    assert all(math.cos(m.world.pens[i].body.angle) < 0 for i in (2, 3))
+    # Both teams start vertical (angle = pi/2); they are separated horizontally
+    assert all(abs(m.world.pens[i].body.angle - math.pi / 2) < 0.01 for i in range(4))
     assert m.world.pens[0].body.position.x < m.world.pens[2].body.position.x
 
 
