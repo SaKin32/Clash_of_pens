@@ -64,16 +64,24 @@ def test_easy_usually_aims_toward_the_opponent():
     assert toward > 150
 
 
+def _lay_pens_flat(match):
+    """Set both pens horizontal so AI collision tests work regardless of starting angle."""
+    match.world.pens[0].body.angle = 0.0
+    match.world.pens[1].body.angle = math.pi
+
+
 def test_hard_picks_a_flick_that_hits_the_opponent():
     """With the opponent within reach, a Hard flick should reach and push it.
 
     (At the very start the pens are too far apart for any flick to connect, so the
-    pens are placed closer here.)
+    pens are placed closer here. The opponent sits near the right edge, because the
+    computer only pushes when that brings the opponent closer to falling off.)
     """
     m = Match()
     x, y, w, h = m.board.as_tuple()
-    m.world.pens[0].body.position = (x + w / 2 - 150, y + h / 2)
-    m.world.pens[1].body.position = (x + w / 2 + 150, y + h / 2)
+    _lay_pens_flat(m)
+    m.world.pens[0].body.position = (x + w - 400, y + h / 2)
+    m.world.pens[1].body.position = (x + w - 120, y + h / 2)
     ai = AIPlayer("hard", random.Random(3))
     shot = ai.choose_shot(m)
     opponent_start = m.world.pens[1].body.position
@@ -84,9 +92,10 @@ def test_hard_picks_a_flick_that_hits_the_opponent():
 
 
 def test_ai_avoids_shooting_itself_off_the_edge():
-    """Hard sitting right at its own edge, facing the opponent, must not fire off the board."""
+    """Hard sitting right at its own edge must not fire off the board."""
     m = Match()
     x, y, w, h = m.board.as_tuple()
+    _lay_pens_flat(m)
     m.world.pens[0].body.position = (x + 30, y + h / 2)
     ai = AIPlayer("hard", random.Random(11))
     shot = ai.choose_shot(m)
@@ -102,8 +111,9 @@ def test_ai_takes_a_winning_shot_when_one_exists():
     for seed in range(5):
         m = Match()
         x, y, w, h = m.board.as_tuple()
-        m.world.pens[0].body.position = (x + w - 260, y + h / 2)
-        m.world.pens[1].body.position = (x + w - 60, y + h / 2)
+        _lay_pens_flat(m)
+        m.world.pens[0].body.position = (x + w - 320, y + h / 2)
+        m.world.pens[1].body.position = (x + w - 50, y + h / 2)
         ai = AIPlayer("hard", random.Random(seed))
         shot = ai.choose_shot(m)
         m.shoot(shot.direction, shot.power)
@@ -135,6 +145,7 @@ def test_hard_sometimes_hits_off_centre_to_make_the_pen_spin():
     for seed in range(12):
         m = Match()
         x, y, w, h = m.board.as_tuple()
+        _lay_pens_flat(m)
         m.world.pens[0].body.position = (x + w / 2 - 150, y + h / 2 - 60)
         m.world.pens[1].body.position = (x + w / 2 + 150, y + h / 2 + 40)
         shot = AIPlayer("hard", random.Random(seed)).choose_shot(m)
