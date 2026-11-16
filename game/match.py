@@ -30,6 +30,7 @@ from common.constants import (
     BOARD_RECT,
     MAX_SHOT_SPEED,
     MAX_SPIN,
+    FLICK_SPIN_BOOST,
     FALL_DURATION,
     ROUNDS_TO_WIN,
     MAX_DRAW_REPLAYS,
@@ -65,6 +66,7 @@ def apply_flick(pen: Pen, direction, power: float, grab_local=(0, 0)) -> None:
     speed = power * MAX_SHOT_SPEED * pen.power
     impulse = direction.normalized() * (speed * body.mass)
     body.apply_impulse_at_world_point(impulse, body.local_to_world(grab_local))
+    body.angular_velocity *= FLICK_SPIN_BOOST
     body.angular_velocity = max(-MAX_SPIN, min(MAX_SPIN, body.angular_velocity))
 
 
@@ -147,7 +149,7 @@ class Match:
 
         board = self.board.as_tuple()
         for team in (0, 1):
-            angle = 0.0 if team == 0 else math.pi  # the teams face each other
+            angle = math.pi / 2  # pens stand vertically at the start
             positions = self._pen_positions(team, board)
             for slot, index in enumerate(self.pen_indexes(team)):
                 self.world.add_pen(
