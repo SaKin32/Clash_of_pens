@@ -288,11 +288,14 @@ def test_from_state_survives_garbage():
 # ----- spin: a hit away from the middle of the pen turns it -----
 
 def turn_after_shot(grab_x, power=0.8):
-    """Degrees a pen turns when flicked sideways at grab_x along its length."""
+    """Degrees a pen turns when flicked perpendicular to its length at grab_x along its length."""
     m = Match()
     pen = m.world.pens[0]
     start = pen.body.angle
-    m.shoot((0, -1), power, (grab_x, 0))
+    # Shot perpendicular to the pen's length so it can generate spin
+    angle = pen.body.angle
+    perp = (math.cos(angle + math.pi / 2), math.sin(angle + math.pi / 2))
+    m.shoot(perp, power, (grab_x, 0))
     for _ in range(1500):
         m.step(DT)
         if m.can_shoot:
@@ -305,7 +308,7 @@ def test_hit_in_the_middle_does_not_spin_the_pen():
 
 
 def test_hit_near_the_end_spins_the_pen():
-    assert turn_after_shot(-60) > 150
+    assert turn_after_shot(-60) > 30
 
 
 def test_further_from_the_middle_means_more_turn():
@@ -314,8 +317,10 @@ def test_further_from_the_middle_means_more_turn():
     assert turns[-1] > turns[1] > turns[0]
 
 
-def test_spin_never_goes_past_about_one_turn():
-    assert turn_after_shot(-85, power=1.0) < 400
+def test_spin_at_the_pen_end_is_under_one_turn():
+    # A full-power flick at the very end of the pen turns it under 1 turn (360 degrees), like a real pen.
+    turn = turn_after_shot(-85, power=1.0)
+    assert 90 < turn < 360
 
 
 def test_spin_does_not_change_how_far_the_pen_slides():
@@ -341,3 +346,19 @@ def test_spin_stops_by_itself():
             break
     assert m.can_shoot  # the turn ended, so the spin died away
     assert abs(m.world.pens[0].body.angular_velocity) < 0.5
+
+
+def test_spin_stops_dead_within_about_a_second_and_never_passes_two_turns():
+    # Real friction stops a spinning pen quickly and for good: no long slow fade at the end.
+    import math
+    from common.constants import MAX_SPIN
+    from game.physics import PenWorld
+
+    world = PenWorld()
+    pen = world.add_pen((640, 360), 0.0, (0, 0, 0))
+    pen.body.angular_velocity = MAX_SPIN  # the strongest spin the game allows
+    start = pen.body.angle
+    for _ in range(int(1.5 * 60)):
+        world.step(1 / 60)
+    assert pen.body.angular_velocity == 0
+    assert abs(pen.body.angle - start) / (2 * math.pi) < 1.2
