@@ -1,18 +1,8 @@
-# /// script
-# dependencies = [
-#     "pygame-ce",
-#     "cffi",
-#     "pymunk",
-#     "platformdirs",
-# ]
-# ///
 """Entry point for Clash of Pens."""
 
-import asyncio
 import sys
 
 import pygame
-import pymunk
 
 from common.constants import (
     GAME_TITLE, VERSION, SCREEN_WIDTH, SCREEN_HEIGHT, FPS, BG_COLOR
@@ -31,7 +21,7 @@ from game.splash_screen import SplashScreen
 from game.title_screen import TitleScreen
 
 
-async def main():
+def main():
     pygame.init()
     settings.load()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -63,11 +53,10 @@ async def main():
         screen.fill(BG_COLOR)
         manager.current.draw(screen)
         pygame.display.flip()
-        await asyncio.sleep(0)
 
     pygame.quit()
     sys.exit()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
