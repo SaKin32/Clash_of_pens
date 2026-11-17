@@ -13,14 +13,35 @@ from game.assets import load_image
 from game.pen_select_screen import PEN_IMAGES
 
 TABLE_FILE = "table.png"
+BENCH_BG_FILE = "bg_bench.png"
 
+_bench_bg: Optional[pygame.Surface] = None
+_bench_loaded = False
 _table: Optional[pygame.Surface] = None
 _table_loaded = False
 _sprites: Dict[Tuple[str, int, tuple], Optional[pygame.Surface]] = {}
 
 
+def bench_background() -> Optional[pygame.Surface]:
+    """Classroom bench background (bg_bench.png) scaled to fill the screen."""
+    global _bench_bg, _bench_loaded
+    if _bench_loaded:
+        return _bench_bg
+    _bench_loaded = True
+    image = load_image(BENCH_BG_FILE)
+    if image is None:
+        return None
+    image = pygame.transform.rotate(image, 90)
+    w, h = 1280, 720
+    scale = max(w / image.get_width(), h / image.get_height())
+    size = (max(1, round(image.get_width() * scale)), max(1, round(image.get_height() * scale)))
+    image = pygame.transform.smoothscale(image, size)
+    _bench_bg = image.subsurface(((size[0] - w) // 2, (size[1] - h) // 2, w, h)).copy()
+    return _bench_bg
+
+
 def table_texture() -> Optional[pygame.Surface]:
-    """table.png turned sideways and cropped to fill the whole board area (BOARD_RECT)."""
+    """table.png turned sideways and scaled to fill the whole board area (BOARD_RECT)."""
     global _table, _table_loaded
     if _table_loaded:
         return _table
