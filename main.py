@@ -1,6 +1,7 @@
 # /// script
 # dependencies = [
 #     "pygame-ce",
+#     "cffi",
 #     "pymunk",
 #     "platformdirs",
 # ]

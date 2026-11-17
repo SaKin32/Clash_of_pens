@@ -14,9 +14,12 @@ SAVABLE_MODES = ("pvc", "pvp", "team")
 
 def save_path() -> str:
     """Return the full path of the save file, creating the folder if needed."""
-    folder = user_data_dir(SAVE_DIR_NAME, appauthor=False)
-    os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, SAVE_FILE_NAME)
+    try:
+        folder = user_data_dir(SAVE_DIR_NAME, appauthor=False)
+        os.makedirs(folder, exist_ok=True)
+        return os.path.join(folder, SAVE_FILE_NAME)
+    except Exception:
+        return SAVE_FILE_NAME
 
 
 def has_save() -> bool:

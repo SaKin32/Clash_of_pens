@@ -13,9 +13,12 @@ _settings = dict(DEFAULTS)
 
 
 def _settings_path() -> str:
-    folder = user_data_dir(SAVE_DIR_NAME, appauthor=False)
-    os.makedirs(folder, exist_ok=True)
-    return os.path.join(folder, SETTINGS_FILE_NAME)
+    try:
+        folder = user_data_dir(SAVE_DIR_NAME, appauthor=False)
+        os.makedirs(folder, exist_ok=True)
+        return os.path.join(folder, SETTINGS_FILE_NAME)
+    except Exception:
+        return SETTINGS_FILE_NAME
 
 
 def load() -> None:
