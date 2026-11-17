@@ -101,7 +101,7 @@ FALL_DURATION = 0.7         # seconds a falling pen takes to disappear
 FALL_BANNER_COLOR = (255, 215, 100)
 
 # Match rules
-ROUNDS_TO_WIN = 2           # best of 3
+ROUNDS_TO_WIN = 3           # first to 3 rounds wins (best of 5)
 MAX_DRAW_REPLAYS = 1        # replays allowed per match; the next draw is decided by edge distance
 
 # Turn timer

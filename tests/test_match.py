@@ -104,23 +104,30 @@ def test_falling_off_loses_the_round():
     assert not m.can_shoot
 
 
-def test_first_to_two_rounds_wins_the_match():
+def test_first_to_three_rounds_wins_the_match():
     m = Match()
     knock_off(m, loser=1)
     assert m.next_round()
     assert m.round_number == 2
+    knock_off(m, loser=1)
+    assert m.next_round()
+    assert m.round_number == 3
     knock_off(m, loser=1)
     assert m.scores == [ROUNDS_TO_WIN, 0]
     assert m.match_winner == 0
     assert not m.next_round()  # the match is over
 
 
-def test_match_can_go_to_three_rounds():
+def test_match_can_go_to_five_rounds():
     m = Match()
     knock_off(m, loser=1)
     m.next_round()
     knock_off(m, loser=0)
-    assert m.scores == [1, 1] and m.match_winner is None
+    m.next_round()
+    knock_off(m, loser=1)
+    m.next_round()
+    knock_off(m, loser=0)
+    assert m.scores == [2, 2] and m.match_winner is None
     m.next_round()
     knock_off(m, loser=0)
     assert m.match_winner == 1

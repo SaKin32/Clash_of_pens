@@ -249,6 +249,8 @@ def test_a_team_match_can_be_won():
     knock_off(m, 2, 3)
     m.next_round()
     knock_off(m, 2, 3)
+    m.next_round()
+    knock_off(m, 2, 3)
     assert m.match_winner == 0
 
 
