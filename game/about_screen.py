@@ -1,5 +1,6 @@
 """About Us screen: cinematic rolling credits over a blurred, darkened background."""
 
+from typing import Optional
 import pygame
 
 from common.constants import (
@@ -114,6 +115,38 @@ class AboutScreen(Screen):
         size = (max(1, round(w * scale)), max(1, round(h * scale)))
         return pygame.transform.smoothscale(image, size)
 
+    @staticmethod
+    def _build_logos_row() -> Optional[pygame.Surface]:
+        """Load and scale pythonlogo, pygame-ce, and pymunk side-by-side in a row."""
+        names = ["pythonlogo.png", "pygame-ce.png", "pymunk.png"]
+        loaded = []
+        for name in names:
+            img = load_image(name)
+            if img:
+                loaded.append(img)
+        if not loaded:
+            return None
+
+        target_h = 42
+        scaled = []
+        for i, img in enumerate(loaded):
+            # pygame-ce (index 1) is square, scale slightly larger for visual balance
+            h = target_h + 4 if i == 1 else target_h
+            w = max(1, round(img.get_width() * (h / img.get_height())))
+            scaled.append(pygame.transform.smoothscale(img, (w, h)))
+
+        gap = 32
+        total_w = sum(s.get_width() for s in scaled) + gap * (len(scaled) - 1)
+        max_h = max(s.get_height() for s in scaled)
+
+        row = pygame.Surface((total_w, max_h), pygame.SRCALPHA)
+        x = 0
+        for s in scaled:
+            y = (max_h - s.get_height()) // 2
+            row.blit(s, (x, y))
+            x += s.get_width() + gap
+        return row
+
     def _build_credits(self) -> pygame.Surface:
         """Draw the whole credits text onto one tall surface."""
         logo = self._load_logo()
@@ -134,6 +167,9 @@ class AboutScreen(Screen):
         blocks.append((self.small_font.render("", True, TEXT_COLOR), 40))
         for line in FOOTER_LINES:
             blocks.append((render_outlined(self.small_font, line, MUTED_COLOR), 8))
+        logos_row = self._build_logos_row()
+        if logos_row:
+            blocks.append((logos_row, 30))
 
         height = sum(s.get_height() + gap for s, gap in blocks)
         credits = pygame.Surface((SCREEN_WIDTH, height), pygame.SRCALPHA)
