@@ -46,7 +46,8 @@ SAVE_VERSION = 1
 SETTINGS_FILE_NAME = "settings.json"
 
 # Board (top-down playing surface)
-BOARD_RECT = (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)  # x, y, width, height (the table fills the whole window)
+# Table is centered with margins showing classroom bench background behind it
+BOARD_RECT = (70, 95, 1140, 565)  # x, y, width, height
 BOARD_COLOR = (196, 164, 120)
 BOARD_BORDER_COLOR = (110, 80, 50)
 
@@ -69,7 +70,7 @@ PEN_OUTLINE_COLOR = (20, 20, 25)
 GRAB_MARGIN = 28  # extra pixels around a pen where a click still grabs it (so the head and tail are easy to grab)
 MAX_PULL_DISTANCE = 160  # pixels of drag that give full power
 MIN_PULL_DISTANCE = 15  # shorter drags are cancelled
-MAX_SHOT_SPEED = 1200  # launch speed at full power (pixels per second)
+MAX_SHOT_SPEED = 2200 # launch speed at full power (pixels per second)
 SETTLE_SPEED = 8.0  # below this speed a pen counts as stopped
 SETTLE_ANGULAR_SPEED = 0.4  # below this spin a pen counts as stopped
 POWER_CURVE = 1.5  # 1.0 = linear. Higher = gentler light flicks, stronger full pulls
