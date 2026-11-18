@@ -127,15 +127,15 @@ class AboutScreen(Screen):
         if not loaded:
             return None
 
-        target_h = 42
+        target_h = 80
         scaled = []
         for i, img in enumerate(loaded):
             # pygame-ce (index 1) is square, scale slightly larger for visual balance
-            h = target_h + 4 if i == 1 else target_h
+            h = target_h + 15 if i == 1 else target_h
             w = max(1, round(img.get_width() * (h / img.get_height())))
             scaled.append(pygame.transform.smoothscale(img, (w, h)))
 
-        gap = 32
+        gap = 42
         total_w = sum(s.get_width() for s in scaled) + gap * (len(scaled) - 1)
         max_h = max(s.get_height() for s in scaled)
 
