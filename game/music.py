@@ -84,3 +84,29 @@ def stop() -> None:
 def refresh() -> None:
     """Call after the Music On/Off button changes the setting."""
     _apply()
+
+
+# ----- Sound Effects (SFX) -----
+
+_sfx_cache: dict = {}
+
+
+def play_sound(name: str, volume: float = 1.0) -> None:
+    """Play a short sound effect if music/sound is on."""
+    if not settings.is_music_on():
+        return
+    if not _ready():
+        return
+    try:
+        if name not in _sfx_cache:
+            for ext in (".mp3", ".wav", ".ogg"):
+                path = resource_path(f"assets/sounds/{name}{ext}")
+                if os.path.exists(path):
+                    _sfx_cache[name] = pygame.mixer.Sound(path)
+                    break
+        sound = _sfx_cache.get(name)
+        if sound:
+            sound.set_volume(max(0.0, min(1.0, volume)))
+            sound.play()
+    except Exception:
+        pass
