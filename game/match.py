@@ -6,8 +6,8 @@ played (and tested) completely headless.
 
 Rules in short:
     * Best of 3 rounds (ROUNDS_TO_WIN).
-    * Each team has 1, 2 or 3 pens (1v1, 2v2, 3v3). Teams take turns, and on its turn
-      a team flicks any one of its pens that is still on the board.
+    * Each team has 1 or 2 pens (1v1, 2v2). Teams take turns, and on its turn
+      a team flicks its scheduled pen that is still on the board.
     * A pen falls when its centre leaves the board. A round ends when a team has no
       pens left; the other team wins it. If both teams lose their last pen together
       it is a draw.
@@ -110,6 +110,27 @@ class Match:
     def team_eliminated(self, team: int) -> bool:
         return not self.alive_indexes(team)
 
+    def scheduled_pen_index(self, team: Optional[int] = None) -> Optional[int]:
+        """Specific pen index whose turn it is to shoot.
+
+        In 2v2, turns alternate sequentially between pen 1 and pen 2.
+        If a pen has fallen, the turn passes to the alive pen.
+        """
+        if team is None:
+            team = self.current
+        alive = self.alive_indexes(team)
+        if not alive:
+            return None
+        if self.team_size <= 1:
+            return alive[0]
+
+        pens = self.pen_indexes(team)
+        wanted_slot = self.turns_taken[team] % self.team_size
+        target = pens[wanted_slot]
+        if target in alive:
+            return target
+        return alive[0]
+
     # ----- setup -----
 
     def reset_match(self) -> None:
@@ -183,9 +204,12 @@ class Match:
 
     @property
     def active_pen(self) -> Pen:
-        """The pen being flicked, or the current team's first pen still on the board."""
+        """The pen being flicked, or the current team's scheduled pen still on the board."""
         if self.shot_in_flight and self.shot_pen is not None:
             return self.world.pens[self.shot_pen]
+        idx = self.scheduled_pen_index()
+        if idx is not None:
+            return self.world.pens[idx]
         alive = self.alive_indexes(self.current)
         index = alive[0] if alive else self.pen_indexes(self.current)[0]
         return self.world.pens[index]
@@ -217,9 +241,9 @@ class Match:
             return False
         alive = self.alive_indexes(self.current)
         if pen_index is None:
-            if not alive:
+            pen_index = self.scheduled_pen_index()
+            if pen_index is None:
                 return False
-            pen_index = alive[0]
         elif pen_index not in alive:
             return False
         apply_flick(self.world.pens[pen_index], direction, max(0.0, min(1.0, power)), grab_local)
