@@ -92,6 +92,7 @@ class MatchScreen(Screen):
         self._ai_wait = 0.0      # seconds left before the computer flicks
         self._save_cleared = False
         self._drop_sounds_played = set()
+        self._last_impact_sound_time = 0.0
 
         self.pause_icon = IconButton("pause.png", (24, 18), self.on_toggle_pause, size=52)
 
@@ -117,6 +118,7 @@ class MatchScreen(Screen):
         self._turn_id = -1
         self._save_cleared = False
         self._drop_sounds_played.clear()
+        self._last_impact_sound_time = 0.0
 
     def resume_from_save(self, state: dict) -> None:
         self.start(Match.from_state(state))
@@ -154,6 +156,7 @@ class MatchScreen(Screen):
         self._turn_id = -1
         self._save_cleared = False
         self._drop_sounds_played.clear()
+        self._last_impact_sound_time = 0.0
         if self.match.mode == "pvc":
             self.ai = AIPlayer(self.match.difficulty or "medium")
             self._ai_wait = random.uniform(*AI_THINK_TIME)
@@ -561,12 +564,16 @@ class MatchScreen(Screen):
         impacts = getattr(self.match.world, "impacts", None)
         if not impacts:
             return
+        now = pygame.time.get_ticks() / 1000.0
         for imp in impacts:
             if not imp.get("sound_played", False):
                 imp["sound_played"] = True
-                impulse = imp.get("impulse", 500.0)
-                vol = max(0.3, min(1.0, impulse / 1200.0))
-                music.play_sound("touching-and-shooting-pen", volume=vol)
+                impulse = imp.get("impulse", 0.0)
+                # Only play impact audio for genuine hits and debounce to prevent sound spam
+                if impulse >= 30.0 and (now - self._last_impact_sound_time) >= 0.08:
+                    self._last_impact_sound_time = now
+                    vol = max(0.25, min(1.0, impulse / 1200.0))
+                    music.play_sound("touching-and-shooting-pen", volume=vol)
 
             ratio = max(0.0, min(1.0, imp["life"] / imp["max_life"]))
             radius = int(14 * (1.0 - ratio) + 4)
