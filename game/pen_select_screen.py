@@ -196,10 +196,6 @@ class PenSelectScreen(Screen):
         if s.picking > 0:  # go back to the previous pen
             s.picking -= 1
             self.on_enter()
-        elif s.mode == "pvc":
-            self.manager.switch("mode_select")
-        elif s.mode == "team":
-            self.manager.switch("team_size_select")
         else:
             self.manager.switch("mode_select")
 
