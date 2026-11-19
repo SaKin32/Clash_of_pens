@@ -37,8 +37,8 @@ SECTIONS = (
         f"The next draw goes to sudden death: a tiny board and {SUDDEN_DEATH_TURN_LIMIT} turns each.",
         "Still a draw? The pen closer to the middle wins.",
     ]),
-    ("Team Match", [
-        "2v2 or 3v3: on your turn flick any one of your pens. A pen that falls is out.",
+    ("Team Match (2 vs 2)", [
+        "2 vs 2: teammates take turns flicking their assigned pen in order. A pen that falls is out.",
         "A team with no pens left loses the round. At the turn limit, more pens left wins.",
     ]),
     ("Keys", [
