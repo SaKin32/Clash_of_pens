@@ -44,7 +44,7 @@ class ModeSelectScreen(Screen):
         ]
         self.pvp_buttons = [
             BadgeButton("Single Match", self._rect(0), self.on_single),
-            BadgeButton("Team Match", self._rect(1), self.on_team),
+            BadgeButton("Team Match (2 vs 2)", self._rect(1), self.on_team),
         ]
         self.back_btn = IconButton(BACK_ICON_FILE, BACK_ICON_POSITION, self.on_back)
         self.music_icon = MusicIcon((20, SCREEN_HEIGHT - 20 - ICON_SIZE), self.on_toggle_music)  # bottom-left corner
@@ -83,7 +83,8 @@ class ModeSelectScreen(Screen):
 
     def on_team(self) -> None:
         game_setup.begin("team")
-        self.manager.switch("team_size_select")
+        game_setup.set_team_size(2)
+        self.manager.switch("pen_select")
 
     def on_online(self) -> None:
         print("Online selected")  # online play is added in step 5
