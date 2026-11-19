@@ -5,6 +5,7 @@ from game.assets import load_font, load_cover_image
 
 from common.constants import (
     SCREEN_WIDTH,
+    SCREEN_HEIGHT,
     BG_COLOR,
     TEXT_COLOR,
     HEADING_COLOR,
