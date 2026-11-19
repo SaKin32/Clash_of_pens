@@ -107,11 +107,15 @@ class PenWorld:
         self.impacts = []
 
         def _on_impact(arbiter, space, data):
+            impulse = arbiter.total_impulse.length
+            # Resting or static contact has negligible impulse (< 30).
+            # Only genuine physical collisions should register an impact.
+            if impulse < 30.0:
+                return True
             pts = arbiter.contact_point_set.points
             if pts:
                 pt = pts[0].point_a
-                if not any((pt - imp["pos"]).length < 18 for imp in self.impacts):
-                    impulse = arbiter.total_impulse.length
+                if not any((pt - imp["pos"]).length < 20 for imp in self.impacts):
                     self.impacts.append({
                         "pos": pymunk.Vec2d(pt.x, pt.y),
                         "life": 0.22,
