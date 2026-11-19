@@ -140,9 +140,9 @@ AI_THINK_TIME = (1.2, 2.0)       # seconds the computer "thinks" before it flick
 AI_PLAYER_INDEX = 1              # in Player vs Computer the computer is Player 2
 
 # ---------------------------------------------------------------------------
-# Step 4: team matches (2v2, 3v3 on one computer)
+# Step 4: team matches (2v2 on one computer)
 # ---------------------------------------------------------------------------
-MAX_TEAM_SIZE = 3                 # pens per team in the biggest team match
-TEAM_TURN_LIMIT_BONUS = 10        # extra turns per team for each extra pen (2v2 = 30, 3v3 = 40)
+MAX_TEAM_SIZE = 2                 # pens per team in team matches (2v2)
+TEAM_TURN_LIMIT_BONUS = 10        # extra turns per team for each extra pen (2v2 = 30)
 TEAM_SUDDEN_DEATH_BONUS = 5       # extra sudden death turns per extra pen
-TEAM_PEN_SPACING = 0.28           # gap between a team's pens, as a fraction of the board height
+TEAM_PEN_SPACING = 0.46           # gap between a team's pens, ample space so pens never overlap or collide at start
