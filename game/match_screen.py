@@ -19,6 +19,7 @@ from common.constants import (
     TEXT_COLOR,
     BOARD_COLOR,
     BOARD_BORDER_COLOR,
+    HEADING_COLOR,
     PEN_OUTLINE_COLOR,
     PHYSICS_DAMPING,
     FONT_SIZE_SMALL,
@@ -53,10 +54,9 @@ from common.pen import get_pen
 from game import save, settings
 from game.ai import AIPlayer
 from game.assets import load_image, load_font
-from game.badge_button import outlined_text
+from game.badge_button import BadgeButton, outlined_text
 from game.icon_button import IconButton
 from game.match_art import pen_sprite, table_texture, bench_background
-from game.button import Button
 from game.match import Match, PLAYER_COLORS
 from game.physics import Pen, PenWorld
 from game.screen_manager import Screen
@@ -80,6 +80,7 @@ class MatchScreen(Screen):
         self.font = load_font(FONT_SIZE_SMALL)
         self.big_font = load_font(FONT_SIZE_BUTTON)
         self.huge_font = load_font(FONT_SIZE_HEADING)
+        self.tag_font = load_font(15)
 
         self.match = Match()
         self.ai: Optional[AIPlayer] = None
@@ -92,14 +93,14 @@ class MatchScreen(Screen):
         self._save_cleared = False
         self._drop_sounds_played = set()
 
-        self.pause_icon = IconButton("pause.png", (24, 20), self.on_toggle_pause)
+        self.pause_icon = IconButton("pause.png", (24, 18), self.on_toggle_pause, size=52)
 
         self.pause_buttons = [
-            Button("Resume", self._pause_rect(0), self.on_resume),
-            Button("Restart Match", self._pause_rect(1), self.on_restart_match),
-            Button("Main Menu", self._pause_rect(2), self.on_main_menu),
-            Button("How to Play", self._pause_rect(3), self.on_how_to_play),
-            Button("", self._pause_rect(4), self.on_toggle_music),
+            BadgeButton("Resume", self._pause_rect(0), self.on_resume),
+            BadgeButton("Restart Match", self._pause_rect(1), self.on_restart_match),
+            BadgeButton("Main Menu", self._pause_rect(2), self.on_main_menu),
+            BadgeButton("How to Play", self._pause_rect(3), self.on_how_to_play),
+            BadgeButton(self._music_text(), self._pause_rect(4), self.on_toggle_music),
         ]
         self.music_btn = self.pause_buttons[4]
 
@@ -125,11 +126,14 @@ class MatchScreen(Screen):
     @staticmethod
     def _pause_rect(index: int) -> tuple:
         x = (SCREEN_WIDTH - PAUSE_BUTTON_WIDTH) // 2
-        y = 200 + index * (BUTTON_HEIGHT + BUTTON_GAP)
+        y = 190 + index * (BUTTON_HEIGHT + BUTTON_GAP)
         return (x, y, PAUSE_BUTTON_WIDTH, BUTTON_HEIGHT)
 
+    def _music_text(self) -> str:
+        return "Music: On" if settings.is_music_on() else "Music: Off"
+
     def _update_music_label(self) -> None:
-        self.music_btn.text = "Music: On" if settings.is_music_on() else "Music: Off"
+        self.music_btn.text = self._music_text()
 
     def on_enter(self) -> None:
         self._update_music_label()
@@ -209,14 +213,15 @@ class MatchScreen(Screen):
         return (pull.length / MAX_PULL_DISTANCE) ** POWER_CURVE
 
     def _grabbed(self, mouse_pos: tuple) -> Optional[int]:
-        """Index of the current team's pen under the mouse (the closest one), or None."""
+        """Index of the currently scheduled active pen under the mouse, or None."""
         m = self.match
-        best, best_distance = None, GRAB_MARGIN
-        for i in m.alive_indexes(m.current):
-            distance = m.world.pens[i].shape.point_query(mouse_pos).distance
-            if distance <= best_distance:
-                best, best_distance = i, distance
-        return best
+        target = m.scheduled_pen_index()
+        if target is None:
+            return None
+        distance = m.world.pens[target].shape.point_query(mouse_pos).distance
+        if distance <= GRAB_MARGIN:
+            return target
+        return None
 
     def _fire(self, mouse_pos: tuple) -> None:
         pull = self._pull_vector(mouse_pos)
@@ -235,6 +240,17 @@ class MatchScreen(Screen):
         if self.match.team_size > 1:
             return f"Team {index + 1}"
         return f"Player {index + 1}"
+
+    def _pen_tag(self, index: int) -> str:
+        m = self.match
+        if m.team_size > 1:
+            team = m.team_of(index)
+            slot = index % m.team_size
+            suffix = chr(ord("A") + slot)
+            return f"P{team + 1}{suffix}"
+        if self.ai is not None and index == AI_PLAYER_INDEX:
+            return "CPU"
+        return f"P{index + 1}"
 
     # ----- events -----
 
@@ -349,6 +365,9 @@ class MatchScreen(Screen):
         for i, pen in enumerate(m.world.pens):
             self._draw_pen(surface, i, pen)
 
+        for i, pen in enumerate(m.world.pens):
+            self._draw_pen_tag(surface, i, pen)
+
         self._draw_impacts(surface)
 
         if self.dragging:
@@ -438,12 +457,50 @@ class MatchScreen(Screen):
                 )
                 corners = [c + offset for c in corners]
 
+        target_pen = m.scheduled_pen_index()
+        is_active = (
+            m.can_shoot
+            and not m.round_over
+            and index == target_pen
+            and (not self.dragging or self.drag_pen == index)
+        )
+        pulse = 0.0
+        if is_active and scale >= 1.0:
+            t_now = pygame.time.get_ticks() / 1000.0
+            freq = 7.0 if (self.dragging and self.drag_pen == index) else 3.8
+            pulse = 0.5 + 0.5 * math.sin(t_now * freq)
+
         key = pen.stats.key if pen.stats else f"p{index + 1}"
         image = pen_sprite(key, pen.length, pen.width)
         if image:
             if scale < 1.0:
                 size = (max(1, int(image.get_width() * scale)), max(1, int(image.get_height() * scale)))
                 image = pygame.transform.smoothscale(image, size)
+
+            if is_active and scale >= 1.0:
+                # Gentle warm brightness breathing directly on the pen body
+                boost = int(32 + 26 * pulse)
+                lit_image = image.copy()
+                lit_image.fill((boost, boost, int(boost * 0.65)), special_flags=pygame.BLEND_RGB_ADD)
+
+                # Sleek diagonal light sweep across the pen surface (confined strictly to pen silhouette)
+                t_sweep = (pygame.time.get_ticks() / 1000.0) % 2.4
+                if t_sweep < 0.9:
+                    iw, ih = image.get_width(), image.get_height()
+                    gleam = pygame.Surface((iw, ih), pygame.SRCALPHA)
+                    gx = int((t_sweep / 0.9) * (iw + 40) - 20)
+                    for dx in range(-10, 11):
+                        alpha = int(75 * (1.0 - abs(dx) / 10.0))
+                        x = gx + dx
+                        if 0 <= x < iw:
+                            pygame.draw.line(gleam, (255, 255, 240, alpha), (x, 0), (x - 6, ih))
+                    mask = pygame.mask.from_surface(image)
+                    mask_surf = mask.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 0))
+                    gleam.blit(mask_surf, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
+                    lit_image.blit(gleam, (0, 0), special_flags=pygame.BLEND_RGBA_ADD)
+
+                image = lit_image
+
             # pymunk angles turn clockwise on screen (y points down), pygame rotates counter-clockwise
             image = pygame.transform.rotate(image, -math.degrees(pen.body.angle))
             if fade:
@@ -452,8 +509,53 @@ class MatchScreen(Screen):
             surface.blit(image, image.get_rect(center=(pos.x, pos.y)))
             return
 
+        if is_active and scale >= 1.0:
+            boost = int(32 + 26 * pulse)
+            body_color = tuple(min(255, c + boost) for c in body_color)
+            outline_color = (255, 235, 120)
         pygame.draw.polygon(surface, body_color, corners)
         pygame.draw.polygon(surface, outline_color, corners, width=4)
+
+    def _draw_pen_tag(self, surface: pygame.Surface, index: int, pen: Pen) -> None:
+        m = self.match
+        if pen.removed or index in m.falling or m.round_over:
+            return
+
+        team = m.team_of(index)
+        is_active = m.can_shoot and index == m.scheduled_pen_index()
+        tag = self._pen_tag(index)
+
+        bg_color = (225, 115, 30) if team == 0 else (55, 65, 85)
+        border_color = (255, 220, 90) if is_active else (25, 25, 30)
+        border_w = 2 if is_active else 1
+
+        # Position beside the pen cap/tail
+        side = -1 if team == 0 else 1
+        pos = pen.body.local_to_world((-pen.length * 0.38, side * (pen.width / 2 + 20)))
+
+        # Render pill badge
+        pill_w, pill_h = 36, 18
+        pill = pygame.Surface((pill_w, pill_h), pygame.SRCALPHA)
+        pygame.draw.rect(pill, bg_color, (0, 0, pill_w, pill_h), border_radius=5)
+        pygame.draw.rect(pill, border_color, (0, 0, pill_w, pill_h), width=border_w, border_radius=5)
+
+        # Inset text
+        txt = outlined_text(self.tag_font, tag, (255, 255, 255), outline=1)
+        pill.blit(txt, txt.get_rect(center=(pill_w // 2, pill_h // 2)))
+
+        if is_active:
+            pulse = 0.5 + 0.5 * math.sin(pygame.time.get_ticks() / 1000.0 * 5.0)
+            glow_ring = pygame.Surface((pill_w + 6, pill_h + 6), pygame.SRCALPHA)
+            pygame.draw.rect(
+                glow_ring,
+                (255, 220, 90, int(120 + 80 * pulse)),
+                (0, 0, pill_w + 6, pill_h + 6),
+                width=2,
+                border_radius=7,
+            )
+            surface.blit(glow_ring, glow_ring.get_rect(center=(int(pos.x), int(pos.y))))
+
+        surface.blit(pill, pill.get_rect(center=(int(pos.x), int(pos.y))))
 
     def _draw_impacts(self, surface: pygame.Surface) -> None:
         impacts = getattr(self.match.world, "impacts", None)
@@ -689,7 +791,7 @@ class MatchScreen(Screen):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill(PAUSE_OVERLAY_COLOR)
         surface.blit(overlay, (0, 0))
-        title = outlined_text(self.huge_font, "Paused", FALL_BANNER_COLOR, outline=4)
-        surface.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 140)))
+        title = outlined_text(self.huge_font, "Paused", HEADING_COLOR, outline=4)
+        surface.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 125)))
         for button in self.pause_buttons:
             button.draw(surface)
