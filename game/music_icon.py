@@ -12,7 +12,7 @@ from game import settings
 from game.assets import load_image
 
 ICON_FILE = "music.png"
-ICON_SIZE = 96
+ICON_SIZE = 64
 ALPHA_THRESHOLD = 128  # pixels fainter than this are treated as empty when trimming
 OFF_LEVEL = 0.4  # how bright the icon stays when music is Off (0 = invisible, 1 = unchanged)
 OFF_BRIGHTNESS = 0.7  # colour of the Off icon (grey) is this bright
