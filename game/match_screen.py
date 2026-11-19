@@ -53,6 +53,8 @@ from common.pen import get_pen
 from game import save, settings
 from game.ai import AIPlayer
 from game.assets import load_image, load_font
+from game.badge_button import outlined_text
+from game.icon_button import IconButton
 from game.match_art import pen_sprite, table_texture, bench_background
 from game.button import Button
 from game.match import Match, PLAYER_COLORS
@@ -90,13 +92,16 @@ class MatchScreen(Screen):
         self._save_cleared = False
         self._drop_sounds_played = set()
 
+        self.pause_icon = IconButton("pause.png", (24, 20), self.on_toggle_pause)
+
         self.pause_buttons = [
             Button("Resume", self._pause_rect(0), self.on_resume),
-            Button("", self._pause_rect(1), self.on_toggle_music),
-            Button("How to Play", self._pause_rect(2), self.on_how_to_play),
-            Button("Save & Exit to Menu", self._pause_rect(3), self.on_save_and_exit),
+            Button("Restart Match", self._pause_rect(1), self.on_restart_match),
+            Button("Main Menu", self._pause_rect(2), self.on_main_menu),
+            Button("How to Play", self._pause_rect(3), self.on_how_to_play),
+            Button("", self._pause_rect(4), self.on_toggle_music),
         ]
-        self.music_btn = self.pause_buttons[1]
+        self.music_btn = self.pause_buttons[4]
 
     # ----- starting a match -----
 
@@ -120,7 +125,7 @@ class MatchScreen(Screen):
     @staticmethod
     def _pause_rect(index: int) -> tuple:
         x = (SCREEN_WIDTH - PAUSE_BUTTON_WIDTH) // 2
-        y = 240 + index * (BUTTON_HEIGHT + BUTTON_GAP)
+        y = 200 + index * (BUTTON_HEIGHT + BUTTON_GAP)
         return (x, y, PAUSE_BUTTON_WIDTH, BUTTON_HEIGHT)
 
     def _update_music_label(self) -> None:
@@ -130,8 +135,34 @@ class MatchScreen(Screen):
         self._update_music_label()
         music.stop()
 
+    def on_toggle_pause(self) -> None:
+        self.paused = not self.paused
+        self.dragging = False
+        self._update_music_label()
+
     def on_resume(self) -> None:
         self.paused = False
+
+    def on_restart_match(self) -> None:
+        self.match.reset_match()
+        self.paused = False
+        self.dragging = False
+        self._turn_id = -1
+        self._save_cleared = False
+        self._drop_sounds_played.clear()
+        if self.match.mode == "pvc":
+            self.ai = AIPlayer(self.match.difficulty or "medium")
+            self._ai_wait = random.uniform(*AI_THINK_TIME)
+        else:
+            self.ai = None
+        save.delete_save()
+
+    def on_main_menu(self) -> None:
+        self.paused = False
+        self.dragging = False
+        if self.match.match_winner is None:
+            self._save_match()
+        self.manager.switch("mode_select")
 
     def on_toggle_music(self) -> None:
         settings.set_music_on(not settings.is_music_on())
@@ -236,6 +267,10 @@ class MatchScreen(Screen):
                 button.handle_event(event)
             return
 
+        self.pause_icon.handle_event(event)
+        if self.paused:
+            return
+
         if not m.can_shoot or not self._human_turn:
             return
 
@@ -322,6 +357,9 @@ class MatchScreen(Screen):
         self._draw_warning_text(surface)
         self._draw_timer(surface)
         self._draw_round_over(surface)
+
+        if not self.paused and not m.round_over:
+            self.pause_icon.draw(surface)
 
         if self.paused:
             self._draw_pause(surface)
@@ -452,12 +490,12 @@ class MatchScreen(Screen):
     def _draw_warning_text(self, surface: pygame.Surface) -> None:
         m = self.match
         if m.board.target is not None and not m.board.shrinking:
-            text = self.big_font.render(
-                "WARNING: board shrinks next turn!", True, WARNING_COLOR
+            text = outlined_text(
+                self.big_font, "WARNING: board shrinks next turn!", WARNING_COLOR, outline=3
             )
             surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, 640 - 40)))
         elif m.sudden_death and not m.round_over:
-            text = self.big_font.render("SUDDEN DEATH", True, WARNING_COLOR)
+            text = outlined_text(self.big_font, "SUDDEN DEATH", WARNING_COLOR, outline=3)
             surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, 640 - 40)))
 
     def _draw_score(self, surface: pygame.Surface) -> None:
@@ -465,7 +503,7 @@ class MatchScreen(Screen):
         label = f"P1  {m.scores[0]} - {m.scores[1]}  P2    Round {m.round_number}"
         if self.ai is not None:
             label = f"You  {m.scores[0]} - {m.scores[1]}  CPU    Round {m.round_number}"
-        text = self.big_font.render(label, True, TEXT_COLOR)
+        text = outlined_text(self.big_font, label, TEXT_COLOR, outline=2)
         surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, 25)))
 
     def _draw_round_over(self, surface: pygame.Surface) -> None:
@@ -490,13 +528,13 @@ class MatchScreen(Screen):
             if m.draw_by_limit and m.last_result == "win":
                 note = "Turn limit reached: more pens left on the board"
 
-        text = self.huge_font.render(msg, True, FALL_BANNER_COLOR)
+        text = outlined_text(self.huge_font, msg, FALL_BANNER_COLOR, outline=4)
         surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
-        sub = self.big_font.render(sub_text, True, TEXT_COLOR)
+        sub = outlined_text(self.big_font, sub_text, TEXT_COLOR, outline=3)
         surface.blit(sub, sub.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 56)))
         if note:
-            text = self.font.render(note, True, TEXT_COLOR)
-            surface.blit(text, text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 96)))
+            note_surf = outlined_text(self.font, note, TEXT_COLOR, outline=2)
+            surface.blit(note_surf, note_surf.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 96)))
 
     def _draw_aim(self, surface: pygame.Surface) -> None:
         pull = self._pull_vector(pygame.mouse.get_pos())
@@ -608,10 +646,10 @@ class MatchScreen(Screen):
         p2_label = self.font.render(p2_tag, True, (55, 50, 48))
         surface.blit(p2_label, p2_label.get_rect(center=p2_avatar_center))
 
-        # Names
-        name1 = self.font.render(self._player_label(0), True, (255, 255, 255))
+        # Names with black outline
+        name1 = outlined_text(self.font, self._player_label(0), (255, 255, 255), outline=2)
         surface.blit(name1, (bx + 72, by + 8))
-        name2 = self.font.render(self._player_label(1), True, (255, 255, 255))
+        name2 = outlined_text(self.font, self._player_label(1), (255, 255, 255), outline=2)
         surface.blit(name2, name2.get_rect(topright=(bx + board_w - 72, by + 8)))
 
         # Round Score Slots (First to 3 wins)
@@ -625,9 +663,9 @@ class MatchScreen(Screen):
             pygame.draw.rect(surface, c2, (bx + board_w - 72 - (3 - i) * 22, by + 34, 16, 18), border_radius=4)
             pygame.draw.rect(surface, (120, 115, 110), (bx + board_w - 72 - (3 - i) * 22, by + 34, 16, 18), width=1, border_radius=4)
 
-        # Round Badge text
-        r_num = self.big_font.render(str(m.round_number), True, (255, 255, 255))
-        r_txt = self.font.render("RD", True, (200, 185, 170))
+        # Round Badge text with black outline
+        r_num = outlined_text(self.big_font, str(m.round_number), (255, 255, 255), outline=2)
+        r_txt = outlined_text(self.font, "RD", (220, 205, 190), outline=2)
         surface.blit(r_num, r_num.get_rect(center=(SCREEN_WIDTH // 2, rd_y + 20)))
         surface.blit(r_txt, r_txt.get_rect(center=(SCREEN_WIDTH // 2, rd_y + 46)))
 
@@ -651,7 +689,7 @@ class MatchScreen(Screen):
         overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
         overlay.fill(PAUSE_OVERLAY_COLOR)
         surface.blit(overlay, (0, 0))
-        title = self.huge_font.render("Paused", True, FALL_BANNER_COLOR)
-        surface.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 160)))
+        title = outlined_text(self.huge_font, "Paused", FALL_BANNER_COLOR, outline=4)
+        surface.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, 140)))
         for button in self.pause_buttons:
             button.draw(surface)
