@@ -88,6 +88,7 @@ class MatchScreen(Screen):
         self._turn_id = -1       # used to notice that a new turn began
         self._ai_wait = 0.0      # seconds left before the computer flicks
         self._save_cleared = False
+        self._drop_sounds_played = set()
 
         self.pause_buttons = [
             Button("Resume", self._pause_rect(0), self.on_resume),
@@ -109,6 +110,7 @@ class MatchScreen(Screen):
         self.dragging = False
         self._turn_id = -1
         self._save_cleared = False
+        self._drop_sounds_played.clear()
 
     def resume_from_save(self, state: dict) -> None:
         self.start(Match.from_state(state))
@@ -191,6 +193,10 @@ class MatchScreen(Screen):
             return
         power = self._power(pull)
         self.match.shoot(pull, power, self.grab_local, self.drag_pen)
+        # Table friction sound: volume scales directly with pull power
+        # Light flick = gentle sound, strong pull = loud friction slide
+        vol = max(0.2, min(1.0, 0.25 + power * 0.75))
+        music.play_sound("pen_slide", volume=vol)
 
     def _player_label(self, index: int) -> str:
         if self.ai is not None and index == AI_PLAYER_INDEX:
@@ -258,6 +264,14 @@ class MatchScreen(Screen):
         m = self.match
         m.step(dt)
 
+        # Play pen drop sound when a falling pen hits the floor
+        if not m.falling and self._drop_sounds_played:
+            self._drop_sounds_played.clear()
+        for pen_idx, fall_time in m.falling.items():
+            if fall_time >= FALL_DURATION * 0.70 and pen_idx not in self._drop_sounds_played:
+                self._drop_sounds_played.add(pen_idx)
+                music.play_sound("pen_drop", volume=0.95)
+
         if m.turn_id != self._turn_id:  # a new turn started (or a skipped one)
             self._turn_id = m.turn_id
             self.dragging = False
@@ -270,6 +284,8 @@ class MatchScreen(Screen):
             if self._ai_wait <= 0:
                 shot = self.ai.choose_shot(m)
                 m.shoot(shot.direction, shot.power, shot.grab)
+                vol = max(0.2, min(1.0, 0.25 + shot.power * 0.75))
+                music.play_sound("pen_slide", volume=vol)
 
         # A finished match cannot be resumed, so remove its save
         if m.match_winner is not None and not self._save_cleared:
@@ -406,6 +422,12 @@ class MatchScreen(Screen):
         if not impacts:
             return
         for imp in impacts:
+            if not imp.get("sound_played", False):
+                imp["sound_played"] = True
+                impulse = imp.get("impulse", 500.0)
+                vol = max(0.3, min(1.0, impulse / 1200.0))
+                music.play_sound("touching-and-shooting-pen", volume=vol)
+
             ratio = max(0.0, min(1.0, imp["life"] / imp["max_life"]))
             radius = int(14 * (1.0 - ratio) + 4)
             alpha = int(220 * ratio)
