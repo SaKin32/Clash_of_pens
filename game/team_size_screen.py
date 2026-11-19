@@ -23,7 +23,6 @@ from game.screen_manager import Screen
 
 SIZES = (
     (2, "2 vs 2", "Two pens each. Two players share one computer."),
-    (3, "3 vs 3", "Three pens each. A longer, more crowded game."),
 )
 
 
