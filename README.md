@@ -27,7 +27,7 @@
 - [4. Game Modes and Match Regulations](#4-game-modes-and-match-regulations)
   - [4.1 Player vs Computer (PvC) and AI Architecture](#41-player-vs-computer-pvc-and-ai-architecture)
   - [4.2 Player vs Player (PvP) - Single Match (1v1)](#42-player-vs-player-pvp---single-match-1v1)
-  - [4.3 Player vs Player (PvP) - Team Match (2v2 and 3v3)](#43-player-vs-player-pvp---team-match-2v2-and-3v3)
+  - [4.3 Player vs Player (PvP) - Team Match (2v2)](#43-player-vs-player-pvp---team-match-2v2)
   - [4.4 Match Lifecycle, Scoring, and Resolution](#44-match-lifecycle-scoring-and-resolution)
 - [5. System Requirements and Prerequisites](#5-system-requirements-and-prerequisites)
 - [6. Complete Cross-Platform Installation Guide](#6-complete-cross-platform-installation-guide)
@@ -200,12 +200,12 @@ The AI operates across three distinct profiles:
 ### 4.2 Player vs Player (PvP) - Single Match (1v1)
 Local turn-based competition on a shared keyboard and mouse. Players take turns flicking their chosen pen. Rounds are tracked on a Best-of-3 schedule.
 
-### 4.3 Player vs Player (PvP) - Team Match (2v2 and 3v3)
-Team Mode introduces squad-based tabletop warfare (`game/team_size_screen.py`, `game/match.py`):
-- Squad Configuration: Each player chooses between a 2-pen or 3-pen formation.
-- Turn Choice: On your turn, you may select and flick **any** active, surviving pen belonging to your team.
+### 4.3 Player vs Player (PvP) - Team Match (2v2)
+Team Mode introduces squad-based tabletop warfare (`game/match.py`):
+- Squad Configuration: 2-pen formation per team (P1A, P1B vs P2A, P2B).
+- Sequential Turns: Players alternate step-by-step turns with their assigned pens (P1A -> P2A -> P1B -> P2B), with visual gold lighting indicating active turn.
 - Elimination Rules: Any pen knocked over the desk perimeter is permanently eliminated from that round.
-- Turn Allowances: Larger team matches receive scaled turn allowances (+10 turns per extra pen) to ensure tactical depth.
+- Turn Allowances: Team matches receive scaled turn allowances (30 turns) to ensure tactical depth.
 - Victory Condition: Knock all opposing pens off the desk, or hold the pen majority when the turn ceiling is reached.
 
 ### 4.4 Match Lifecycle, Scoring, and Resolution
@@ -538,7 +538,7 @@ Clash_of_pens/
 │   ├── settings.py                  # User preferences persistence (audio, options)
 │   ├── setup.py                     # Match configuration and roster initialization
 │   ├── splash_screen.py             # Intro branding and splash sequence
-│   ├── team_size_screen.py          # Squad match configuration (2v2 vs 3v3)
+│   ├── team_size_screen.py          # Squad match configuration (2v2)
 │   └── title_screen.py              # Main landing screen
 │
 ├── tests/                           # Pytest automated test suites
