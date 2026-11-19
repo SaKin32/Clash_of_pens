@@ -17,7 +17,6 @@ from game.physics import PenWorld
 
 DT = 1 / 60
 PENS_2V2 = ("ball_pen", "gel_pen", "marker", "metal_pen")          # team 0 = first two, team 1 = last two
-PENS_3V3 = ("ball_pen", "gel_pen", "marker", "metal_pen", "fountain_pen", "highlighter")
 
 
 def settle(m, frames=200):
@@ -46,14 +45,13 @@ def skip_until_round_over(m):
 
 # ----- setup -----
 
-@pytest.mark.parametrize("keys,size", [(PENS_2V2, 2), (PENS_3V3, 3)])
-def test_team_match_has_the_right_pens(keys, size):
-    m = Match(keys)
-    assert m.team_size == size
+def test_team_match_has_the_right_pens():
+    m = Match(PENS_2V2)
+    assert m.team_size == 2
     assert m.mode == "team"
-    assert len(m.world.pens) == 2 * size
-    assert [m.team_of(i) for i in range(2 * size)] == [0] * size + [1] * size
-    assert [p.stats.key for p in m.world.pens] == list(keys)
+    assert len(m.world.pens) == 4
+    assert [m.team_of(i) for i in range(4)] == [0, 0, 1, 1]
+    assert [p.stats.key for p in m.world.pens] == list(PENS_2V2)
 
 
 def test_one_v_one_is_unchanged():
@@ -62,10 +60,9 @@ def test_one_v_one_is_unchanged():
     assert len(m.world.pens) == 2
 
 
-@pytest.mark.parametrize("keys", [PENS_2V2, PENS_3V3])
 @pytest.mark.parametrize("sudden_death", [False, True])
-def test_pens_start_inside_the_board_and_apart(keys, sudden_death):
-    m = Match(keys)
+def test_pens_start_inside_the_board_and_apart(sudden_death):
+    m = Match(PENS_2V2)
     m.sudden_death_next = sudden_death
     m.reset_round()
     board = m.board.as_tuple()
@@ -96,11 +93,10 @@ def test_wrong_number_of_pen_keys_is_fixed_up():
 
 def test_turn_limits_grow_with_team_size():
     assert Match(PENS_2V2).turn_limit == ROUND_TURN_LIMIT + TEAM_TURN_LIMIT_BONUS
-    assert Match(PENS_3V3).turn_limit == ROUND_TURN_LIMIT + 2 * TEAM_TURN_LIMIT_BONUS
-    m = Match(PENS_3V3)
+    m = Match(PENS_2V2)
     m.sudden_death_next = True
     m.reset_round()
-    assert m.turn_limit == SUDDEN_DEATH_TURN_LIMIT + 2 * TEAM_SUDDEN_DEATH_BONUS
+    assert m.turn_limit == SUDDEN_DEATH_TURN_LIMIT + TEAM_SUDDEN_DEATH_BONUS
 
 
 # ----- shooting: any pen of your team -----
@@ -182,14 +178,6 @@ def test_team_with_no_pens_left_loses_the_round():
     assert m.last_result == "win"
 
 
-def test_three_v_three_needs_all_three_to_fall():
-    m = Match(PENS_3V3)
-    knock_off(m, 3, 4)
-    assert not m.round_over
-    knock_off(m, 5)
-    assert m.round_winner == 0
-
-
 def test_both_teams_losing_everything_together_is_a_draw():
     m = Match(PENS_2V2)
     for i in range(4):
@@ -257,16 +245,16 @@ def test_a_team_match_can_be_won():
 # ----- save / load -----
 
 def test_team_state_round_trip():
-    m = Match(PENS_3V3, mode="team")
-    knock_off(m, 3, 4, 5)
+    m = Match(PENS_2V2, mode="team")
+    knock_off(m, 2, 3)
     m.next_round()
     state = m.to_state()
-    assert state["team_size"] == 3
+    assert state["team_size"] == 2
     back = Match.from_state(state)
-    assert back.team_size == 3 and back.mode == "team"
-    assert back.pen_keys == list(PENS_3V3)
+    assert back.team_size == 2 and back.mode == "team"
+    assert back.pen_keys == list(PENS_2V2)
     assert back.scores == [1, 0]
-    assert len(back.world.pens) == 6
+    assert len(back.world.pens) == 4
 
 
 def test_old_save_without_team_size_loads_as_one_v_one():
@@ -284,7 +272,7 @@ def test_old_save_without_team_size_loads_as_one_v_one():
 ])
 def test_bad_team_save_still_loads(bad):
     m = Match.from_state(bad)
-    assert 1 <= m.team_size <= 3
+    assert 1 <= m.team_size <= 2
     assert len(m.pen_keys) == 2 * m.team_size
     assert m.can_shoot
 
