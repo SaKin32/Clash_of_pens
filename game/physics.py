@@ -111,7 +111,14 @@ class PenWorld:
             if pts:
                 pt = pts[0].point_a
                 if not any((pt - imp["pos"]).length < 18 for imp in self.impacts):
-                    self.impacts.append({"pos": pymunk.Vec2d(pt.x, pt.y), "life": 0.22, "max_life": 0.22})
+                    impulse = arbiter.total_impulse.length
+                    self.impacts.append({
+                        "pos": pymunk.Vec2d(pt.x, pt.y),
+                        "life": 0.22,
+                        "max_life": 0.22,
+                        "impulse": impulse,
+                        "sound_played": False,
+                    })
             return True
 
         self.space.on_collision(post_solve=_on_impact)
