@@ -17,7 +17,7 @@ from common.constants import (
 )
 from game import settings
 from game import setup as game_setup
-from game.assets import load_font
+from game.assets import load_font, load_cover_image
 from game.badge_button import BadgeButton, outlined_text
 from game.icon_button import IconButton
 from game.music_icon import MusicIcon, ICON_SIZE
@@ -34,6 +34,7 @@ class ModeSelectScreen(Screen):
         super().__init__(manager)
         self.heading_font = load_font(FONT_SIZE_HEADING)
         self.small_font = load_font(FONT_SIZE_SMALL)
+        self.background = load_cover_image("bg_img.png", (SCREEN_WIDTH, SCREEN_HEIGHT))
 
         self.view = "main"  # "main" = the 3 mode buttons, "pvp" = Single Match / Team Match
         self.main_buttons = [
@@ -112,7 +113,10 @@ class ModeSelectScreen(Screen):
         self.help_btn.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill(BG_COLOR)
+        if self.background:
+            surface.blit(self.background, (0, 0))
+        else:
+            surface.fill(BG_COLOR)
 
         title = "Select Mode" if self.view == "main" else "Player vs Player"
         heading = outlined_text(self.heading_font, title, HEADING_COLOR, outline=3)

@@ -1,7 +1,7 @@
 """Team size screen for Team Match: 2 vs 2 or 3 vs 3 on one computer."""
 
 import pygame
-from game.assets import load_font
+from game.assets import load_font, load_cover_image
 
 from common.constants import (
     SCREEN_WIDTH,
@@ -31,6 +31,7 @@ class TeamSizeScreen(Screen):
         super().__init__(manager)
         self.heading_font = load_font(FONT_SIZE_HEADING)
         self.small_font = load_font(FONT_SIZE_SMALL)
+        self.background = load_cover_image("bg_img.png", (SCREEN_WIDTH, SCREEN_HEIGHT))
         self.buttons = [
             BadgeButton(label, self._rect(i), lambda n=size: self.choose(n))
             for i, (size, label, _) in enumerate(SIZES)
@@ -61,12 +62,15 @@ class TeamSizeScreen(Screen):
         self.music_icon.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill(BG_COLOR)
+        if self.background:
+            surface.blit(self.background, (0, 0))
+        else:
+            surface.fill(BG_COLOR)
         heading = outlined_text(self.heading_font, "Team Match", HEADING_COLOR, outline=3)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 160)))
         for (_, _, note), button in zip(SIZES, self.buttons):
             button.draw(surface)
-            text = self.small_font.render(note, True, TEXT_COLOR)
+            text = outlined_text(self.small_font, note, TEXT_COLOR, outline=2)
             surface.blit(text, text.get_rect(midtop=(SCREEN_WIDTH // 2, button.rect.bottom + 6)))
         self.back_btn.draw(surface)
         self.music_icon.draw(surface)

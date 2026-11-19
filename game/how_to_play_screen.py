@@ -1,10 +1,11 @@
 """How to play: the rules on one page. Reachable from the mode screen and the pause menu."""
 
 import pygame
-from game.assets import load_font
+from game.assets import load_font, load_cover_image
 
 from common.constants import (
     SCREEN_WIDTH,
+    SCREEN_HEIGHT,
     BG_COLOR,
     TEXT_COLOR,
     HEADING_COLOR,
@@ -52,6 +53,9 @@ class HowToPlayScreen(Screen):
         self.heading_font = load_font(FONT_SIZE_HEADING)
         self.section_font = load_font(FONT_SIZE_BUTTON)
         self.font = load_font(FONT_SIZE_SMALL + 4)
+        self.background = load_cover_image("bg_img.png", (SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        self.overlay.fill((0, 0, 0, 160))
         self.back_btn = make_back_button(self.on_back)
         self.music_icon = make_music_icon()
         self.return_to = "mode_select"  # whoever opens this screen sets where Back goes
@@ -67,7 +71,11 @@ class HowToPlayScreen(Screen):
         self.music_icon.handle_event(event)
 
     def draw(self, surface: pygame.Surface) -> None:
-        surface.fill(BG_COLOR)
+        if self.background:
+            surface.blit(self.background, (0, 0))
+            surface.blit(self.overlay, (0, 0))
+        else:
+            surface.fill(BG_COLOR)
         heading = outlined_text(self.heading_font, "How to Play", HEADING_COLOR, outline=3)
         surface.blit(heading, heading.get_rect(center=(SCREEN_WIDTH // 2, 70)))
 
@@ -76,7 +84,7 @@ class HowToPlayScreen(Screen):
             surface.blit(outlined_text(self.section_font, title, HEADING_COLOR, outline=2), (140, y))
             y += 36
             for line in lines:
-                surface.blit(self.font.render(line, True, TEXT_COLOR), (170, y))
+                surface.blit(outlined_text(self.font, line, TEXT_COLOR, outline=2), (170, y))
                 y += 25
             y += 8
         self.back_btn.draw(surface)
